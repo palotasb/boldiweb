@@ -1,0 +1,17 @@
+[project]
+name = "boldiweb"
+version = "0.0.1"
+dependencies = [
+    "Jinja2",
+    "marko",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "mypy",
+]
+
+[tool.setuptools.packages]
+find = {}
