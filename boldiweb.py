@@ -1,11 +1,14 @@
 import argparse
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import jinja2
+from unidecode import unidecode
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
+NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-_/]+", re.ASCII)
 
 
 @dataclass(eq=True, order=True, frozen=True)
@@ -45,6 +48,12 @@ def full_relative_to(target: Path, relative_to: Path) -> Path:
             return Path(*([Path("..")] * i)) / target.relative_to(relative_to_parents)
 
 
+def ascii_path(path: Path) -> Path:
+    path_str = unidecode(str(path))
+    path_str = NON_URL_SAFE_RE.sub("_", path_str)
+    return Path(path_str)
+
+
 @dataclass
 class Album:
     source: SourceFolder
@@ -67,29 +76,35 @@ class Album:
         )
         self.env.globals = {
             "album": self,
-            "target": self.target,
+            "root": Path("."),
         }
         self.env.filters["relative_to"] = full_relative_to
+        self.env.filters["ascii_path"] = ascii_path
 
     def render(self):
-        self.render_folder(self.source)
+        self.render_folder(self.target, self.source)
 
-    def render_folder(self, folder: SourceFolder):
-        relative_path = full_relative_to(folder.path, self.source.path)
-        target_path = self.target / relative_path / "index.html"
+    def render_folder(self, target_folder: Path, source_folder: SourceFolder):
+        relative_source_path = full_relative_to(source_folder.path, self.source.path)
+        relative_target_path = full_relative_to(target_folder, self.target)
+        target_path = self.target / relative_target_path / "index.html"
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         index_template = self.env.get_template("index.html")
         stream = index_template.stream(
             {
-                "folder": folder,
+                "source": source_folder,
+                "target": relative_target_path,
             }
         )
         with open(target_path, "w") as fp:
             stream.dump(fp)
 
-        for subfolder in folder.subfolders:
-            self.render_folder(subfolder)
+        for subfolder in source_folder.subfolders:
+            self.render_folder(
+                self.target / relative_target_path / ascii_path(subfolder.path.name),
+                subfolder,
+            )
 
 
 def main():
