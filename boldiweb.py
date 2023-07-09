@@ -1,5 +1,5 @@
 import argparse
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 
 import jinja2
@@ -35,27 +35,31 @@ class Folder:
 
     def __hash__(self) -> int:
         return hash(self.path)
+    
+
+def relative_path(source: Path, target: Path) -> Path:
+    for i, source_parent in enumerate([source] + list(source.parents)):
+        if target.is_relative_to(source_parent):
+            return Path(*([Path("..")] * i)) / target.relative_to(source_parent)
 
 
-@dataclass(eq=True, order=True, frozen=True)
-class PathInfo:
-    abs_path: Path
+@dataclass
+class FolderInfo:
     rel_path: Path
     rev_path: Path
 
-    @staticmethod
-    def from_root(root_path: Path, abs_path: Path) -> "PathInfo":
-        rel_path = abs_path.relative_to(root_path)
-        rev_path = Path(*(Path("..") for _ in rel_path.parts))
-        return PathInfo(abs_path, rel_path, rev_path)
+
+@dataclass
+class ImageInfo:
+    pass
 
 
 @dataclass
 class Album:
     root_folder: Folder
     target: Path
-    folder_infos: dict[Path, PathInfo] = field(init=False, default_factory=dict)
-    image_infos: dict[Path, PathInfo] = field(init=False, default_factory=dict)
+    folder_infos: dict[Path, FolderInfo] = field(init=False, default_factory=dict)
+    image_infos: dict[Path, ImageInfo] = field(init=False, default_factory=dict)
     env: jinja2.Environment = field(init=False)
     index_template: jinja2.Template = field(init=False)
 
@@ -70,9 +74,9 @@ class Album:
             variable_end_string="</j2:var>",
             comment_start_string="<j2:comment>",
             comment_end_string="</j2:comment>",
-            line_statement_prefix="<j2:line />",
-            line_comment_prefix="<j2:linecomment />",
             keep_trailing_newline=True,
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.env.globals = {
             "album": self,
@@ -83,9 +87,12 @@ class Album:
         self.index_template = self.env.get_template("index.html")
 
     def _set_infos(self, folder: Folder):
-        self.folder_infos[folder] = PathInfo.from_root(self.root_folder.path, folder.path)
+        self.folder_infos[folder] = FolderInfo(
+            rel_path=relative_path(self.root_folder.path, folder.path),
+            rev_path=relative_path(folder.path, self.root_folder.path),
+        )
         for image in folder.images:
-            self.image_infos[image] = PathInfo.from_root(self.root_folder.path, image.path)
+            self.image_infos[image] = ImageInfo()
         for subfolder in folder.subfolders:
             self._set_infos(subfolder)
 
@@ -94,6 +101,7 @@ class Album:
 
     def render_folder(self, folder: Folder):
         folder_info = self.folder_infos[folder]
+        print(f"{folder_info=!r}")
         stream = self.index_template.stream(
             {
                 "folder": folder,
