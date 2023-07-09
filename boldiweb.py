@@ -12,15 +12,15 @@ HERE = Path(__file__).parent.resolve()
 
 
 @dataclass(eq=True, order=True, frozen=True)
-class Image:
+class SourceImage:
     path: Path
 
 
 @dataclass(eq=True, order=True, frozen=True)
-class Folder:
+class SourceFolder:
     path: Path
-    subfolders: list["Folder"] = field(default_factory=list, init=False)
-    images: list[Image] = field(default_factory=list, init=False)
+    subfolders: list["SourceFolder"] = field(default_factory=list, init=False)
+    images: list[SourceImage] = field(default_factory=list, init=False)
     ignored_items: list[Path] = field(default_factory=list, init=False)
 
     def __post_init__(self):
@@ -30,9 +30,9 @@ class Folder:
                 and item.suffix.upper() in IMAGE_EXTENSIONS
                 and not item.name.startswith(".")
             ):
-                self.images.append(Image(item))
+                self.images.append(SourceImage(item))
             elif item.is_dir() and not item.name.startswith("."):
-                self.subfolders.append(Folder(item))
+                self.subfolders.append(SourceFolder(item))
             else:
                 self.ignored_items.append(item)
 
@@ -59,7 +59,7 @@ class ImageInfo:
 
 @dataclass
 class Album:
-    root_folder: Folder
+    root_folder: SourceFolder
     target: Path
     folder_infos: dict[Path, FolderInfo] = field(init=False, default_factory=dict)
     image_infos: dict[Path, ImageInfo] = field(init=False, default_factory=dict)
@@ -90,7 +90,7 @@ class Album:
         self.env.filters["relative_to"] = relative_path
         self.index_template = self.env.get_template("index.html")
 
-    def _set_infos(self, folder: Folder):
+    def _set_infos(self, folder: SourceFolder):
         self.folder_infos[folder] = FolderInfo(
             rel_path=relative_path(folder.path, self.root_folder.path),
             rev_path=relative_path(self.root_folder.path, folder.path),
@@ -103,9 +103,8 @@ class Album:
     def render(self):
         self.render_folder(self.root_folder)
 
-    def render_folder(self, folder: Folder):
+    def render_folder(self, folder: SourceFolder):
         folder_info = self.folder_infos[folder]
-        print(f"{folder_info=!r}")
         stream = self.index_template.stream(
             {
                 "folder": folder,
@@ -128,7 +127,7 @@ def main():
     args = parser.parse_args()
     root_path: Path = args.root_path
     output_path: Path = args.output_path
-    album = Album(Folder(root_path), output_path)
+    album = Album(SourceFolder(root_path), output_path)
     album.render()
 
 
