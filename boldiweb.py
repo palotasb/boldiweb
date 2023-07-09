@@ -1,6 +1,6 @@
 import argparse
 import re
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 
 import jinja2
@@ -54,13 +54,59 @@ def ascii_path(path: Path) -> Path:
     return Path(path_str)
 
 
-@dataclass
-class Album:
-    source: SourceFolder
-    target: Path
-    env: jinja2.Environment = field(init=False)
+@dataclass(eq=True, order=True, frozen=True)
+class TargetImage:
+    source_image: SourceImage
+    path: Path
+    orig_path: Path
+    orig_name: str = field(init=False)
 
     def __post_init__(self):
+        super().__setattr__("orig_name", self.orig_path.name)
+
+
+@dataclass(eq=True, order=True, frozen=True)
+class TargetFolder:
+    source_folder: SourceFolder
+    path: Path
+    orig_path: Path
+    orig_name: str = field(init=False)
+    subfolders: list["TargetFolder"] = field(init=False, default_factory=list)
+    images: list[TargetImage] = field(init=False, default_factory=list)
+
+    def __post_init__(self):
+        super().__setattr__("orig_name", self.orig_path.name)
+        for source_subfolder in self.source_folder.subfolders:
+            name = Path(source_subfolder.path.name)
+            self.subfolders.append(
+                TargetFolder(
+                    source_subfolder,
+                    self.path / ascii_path(name),
+                    self.orig_path / name,
+                )
+            )
+        for source_image in self.source_folder.images:
+            name = Path(source_image.path.name)
+            self.images.append(
+                TargetImage(
+                    source_image, self.path / ascii_path(name), self.orig_path / name
+                )
+            )
+
+
+@dataclass
+class Album:
+    target_path: InitVar[Path]
+    source_path: InitVar[Path]
+    source: SourceFolder = field(init=False)
+    target: TargetFolder = field(init=False)
+    target_abs_path: Path = field(init=False)
+    env: jinja2.Environment = field(init=False)
+
+    def __post_init__(self, target_path: Path, source_path: Path):
+        self.source = SourceFolder(source_path)
+        self.target = TargetFolder(self.source, Path("."), Path("."))
+        self.target_abs_path = target_path
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
             autoescape=True,
@@ -82,39 +128,29 @@ class Album:
         self.env.filters["ascii_path"] = ascii_path
 
     def render(self):
-        self.render_folder(self.target, self.source)
+        self.render_folder(self.target)
 
-    def render_folder(self, target_folder: Path, source_folder: SourceFolder):
-        relative_source_path = full_relative_to(source_folder.path, self.source.path)
-        relative_target_path = full_relative_to(target_folder, self.target)
-        target_path = self.target / relative_target_path / "index.html"
-        target_path.parent.mkdir(parents=True, exist_ok=True)
+    def render_folder(self, folder: TargetFolder):
+        target_abs_path = self.target_abs_path / folder.path / "index.html"
+        target_abs_path.parent.mkdir(parents=True, exist_ok=True)
 
         index_template = self.env.get_template("index.html")
-        stream = index_template.stream(
-            {
-                "source": source_folder,
-                "target": relative_target_path,
-            }
-        )
-        with open(target_path, "w") as fp:
+        stream = index_template.stream({"folder": folder})
+        with open(target_abs_path, "w") as fp:
             stream.dump(fp)
 
-        for subfolder in source_folder.subfolders:
-            self.render_folder(
-                self.target / relative_target_path / ascii_path(subfolder.path.name),
-                subfolder,
-            )
+        for subfolder in folder.subfolders:
+            self.render_folder(subfolder)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("root_path", type=Path)
-    parser.add_argument("output_path", type=Path)
+    parser.add_argument("source_path", type=Path)
+    parser.add_argument("target_path", type=Path)
     args = parser.parse_args()
-    root_path: Path = args.root_path
-    output_path: Path = args.output_path
-    album = Album(SourceFolder(root_path), output_path)
+    source_path: Path = args.source_path
+    target_path: Path = args.target_path
+    album = Album(target_path, source_path)
     album.render()
 
 
