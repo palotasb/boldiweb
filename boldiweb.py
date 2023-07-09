@@ -1,9 +1,6 @@
 import argparse
-import os
-import pathlib
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Union, Optional
 
 import jinja2
 
@@ -38,7 +35,7 @@ class SourceFolder:
 
     def __hash__(self) -> int:
         return hash(self.path)
-    
+
 
 def relative_path(target: Path, relative_to: Path) -> Path:
     for i, relative_to_parents in enumerate([relative_to] + list(relative_to.parents)):
@@ -83,7 +80,11 @@ class Album:
                 "folder": folder,
             }
         )
-        target_path = self.target / relative_path(folder.path, self.root_folder.path) / "index.html"
+        target_path = (
+            self.target
+            / relative_path(folder.path, self.root_folder.path)
+            / "index.html"
+        )
         target_path.parent.mkdir(parents=True, exist_ok=True)
         with open(target_path, "w") as fp:
             stream.dump(fp)
