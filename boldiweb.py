@@ -1,19 +1,51 @@
 import argparse
+import collections
 import re
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
+from pprint import pformat
+from typing import Any
 
 import jinja2
+from exiftool import ExifToolHelper
+from PIL import Image
 from unidecode import unidecode
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
 NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-_/]+", re.ASCII)
+RELEVANT_EXIF_TAGS = ("EXIF:all", "IPTC:all")
+
+
+exiftool = ExifToolHelper().__enter__()
+
+
+def get_exif_tags(image_path: Path) -> dict[str, Any]:
+    raw_tags = exiftool.get_tags(str(image_path), RELEVANT_EXIF_TAGS)[
+        0
+    ]
+    tags = collections.defaultdict(dict)
+    for key, value in raw_tags.items():
+        assert isinstance(key, str)
+        if ":" not in key:
+            tags[key] = value
+        else:
+            category, tag = key.split(":", 1)
+            tags[category][tag] = value
+    tags["SourceFile"] = image_path.name
+    return tags
 
 
 @dataclass(eq=True, order=True, frozen=True)
 class SourceImage:
     path: Path
+    image: Image = field(init=False)
+    exif: dict[str, Any] = field(init=False)
+
+    def __post_init__(self):
+        super().__setattr__("image", Image.open(self.path))
+        self.image.close()
+        super().__setattr__("exif", get_exif_tags(self.path))
 
 
 @dataclass(eq=True, order=True, frozen=True)
@@ -156,3 +188,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+exiftool.__exit__(None, None, None)
