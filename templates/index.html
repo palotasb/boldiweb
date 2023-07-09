@@ -4,19 +4,21 @@
     <title>My Webpage</title>
 </head>
 <body>
-    <h1>Folder: <j2:var>folder_info.rel_path</j2:var></h1>
-    <a href="<j2:var>folder_info.rev_path</j2:var>">Home: <j2:var>folder_info.rev_path</j2:var></a>
+    <h1>Folder: <j2:var>folder.path | relative_to(album.root_folder.path)</j2:var></h1>
+    <a href="<j2:var>album.root_folder.path | relative_to(folder.path)</j2:var>">Home:
+        <j2:var>album.root_folder.path | relative_to(folder.path)</j2:var></a>
 
     <ul id="folders">
     <j2:block> for subfolder in folder.subfolders </j2:block>
-        <li><a href="<j2:var>folder_infos[subfolder].rel_path | relative_to(folder_info.rel_path)</j2:var>"><j2:var>folder_infos[subfolder].rel_path</j2:var></a></li>
+        <li><a href="<j2:var>subfolder.path | relative_to(folder.path)</j2:var>"><j2:var>
+            subfolder.path | relative_to(folder.path)</j2:var></a></li>
     <j2:block> endfor </j2:block>
     </ul>
     
     <ul id="images">
     <j2:block> for image in folder.images </j2:block>
         <li>
-            IMG: <j2:var>image_infos[image].rel_path</j2:var>
+            IMG: <j2:var>image.path | relative_to(folder.path)</j2:var>
         </li>
     <j2:block> endfor </j2:block>
     </ul>

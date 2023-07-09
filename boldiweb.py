@@ -47,27 +47,13 @@ def relative_path(target: Path, relative_to: Path) -> Path:
 
 
 @dataclass
-class FolderInfo:
-    rel_path: Path
-    rev_path: Path
-
-
-@dataclass
-class ImageInfo:
-    pass
-
-
-@dataclass
 class Album:
     root_folder: SourceFolder
     target: Path
-    folder_infos: dict[Path, FolderInfo] = field(init=False, default_factory=dict)
-    image_infos: dict[Path, ImageInfo] = field(init=False, default_factory=dict)
     env: jinja2.Environment = field(init=False)
     index_template: jinja2.Template = field(init=False)
 
     def __post_init__(self):
-        self._set_infos(self.root_folder)
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
             autoescape=True,
@@ -83,35 +69,21 @@ class Album:
         )
         self.env.globals = {
             "album": self,
-            "folder_infos": self.folder_infos,
-            "image_infos": self.image_infos,
             "target": self.target,
         }
         self.env.filters["relative_to"] = relative_path
         self.index_template = self.env.get_template("index.html")
 
-    def _set_infos(self, folder: SourceFolder):
-        self.folder_infos[folder] = FolderInfo(
-            rel_path=relative_path(folder.path, self.root_folder.path),
-            rev_path=relative_path(self.root_folder.path, folder.path),
-        )
-        for image in folder.images:
-            self.image_infos[image] = ImageInfo()
-        for subfolder in folder.subfolders:
-            self._set_infos(subfolder)
-
     def render(self):
         self.render_folder(self.root_folder)
 
     def render_folder(self, folder: SourceFolder):
-        folder_info = self.folder_infos[folder]
         stream = self.index_template.stream(
             {
                 "folder": folder,
-                "folder_info": folder_info,
             }
         )
-        target_path = self.target / folder_info.rel_path / "index.html"
+        target_path = self.target / relative_path(folder.path, self.root_folder.path) / "index.html"
         target_path.parent.mkdir(parents=True, exist_ok=True)
         with open(target_path, "w") as fp:
             stream.dump(fp)
