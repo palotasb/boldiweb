@@ -9,7 +9,7 @@
 
     <ul id="folders">
     <j2:block> for subfolder in folder.subfolders </j2:block>
-        <li><a href="<j2:var>folder_infos[subfolder].rel_path</j2:var>"><j2:var>folder_infos[subfolder].rel_path</j2:var></a></li>
+        <li><a href="<j2:var>folder_infos[subfolder].rel_path | relative_to(folder_info.rel_path)</j2:var>"><j2:var>folder_infos[subfolder].rel_path</j2:var></a></li>
     <j2:block> endfor </j2:block>
     </ul>
     

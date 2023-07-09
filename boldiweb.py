@@ -1,6 +1,9 @@
 import argparse
+import os
+import pathlib
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
+from typing import Union, Optional
 
 import jinja2
 
@@ -37,10 +40,10 @@ class Folder:
         return hash(self.path)
     
 
-def relative_path(source: Path, target: Path) -> Path:
-    for i, source_parent in enumerate([source] + list(source.parents)):
-        if target.is_relative_to(source_parent):
-            return Path(*([Path("..")] * i)) / target.relative_to(source_parent)
+def relative_path(target: Path, relative_to: Path) -> Path:
+    for i, relative_to_parents in enumerate([relative_to] + list(relative_to.parents)):
+        if target.is_relative_to(relative_to_parents):
+            return Path(*([Path("..")] * i)) / target.relative_to(relative_to_parents)
 
 
 @dataclass
@@ -84,12 +87,13 @@ class Album:
             "image_infos": self.image_infos,
             "target": self.target,
         }
+        self.env.filters["relative_to"] = relative_path
         self.index_template = self.env.get_template("index.html")
 
     def _set_infos(self, folder: Folder):
         self.folder_infos[folder] = FolderInfo(
-            rel_path=relative_path(self.root_folder.path, folder.path),
-            rev_path=relative_path(folder.path, self.root_folder.path),
+            rel_path=relative_path(folder.path, self.root_folder.path),
+            rev_path=relative_path(self.root_folder.path, folder.path),
         )
         for image in folder.images:
             self.image_infos[image] = ImageInfo()
