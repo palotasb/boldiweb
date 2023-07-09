@@ -4,9 +4,9 @@
     <title>My Webpage</title>
 </head>
 <body>
-    <h1>Folder: <j2:var>folder.path | relative_to(album.root_folder.path)</j2:var></h1>
-    <a href="<j2:var>album.root_folder.path | relative_to(folder.path)</j2:var>">Home:
-        <j2:var>album.root_folder.path | relative_to(folder.path)</j2:var></a>
+    <h1>Folder: <j2:var>folder.path</j2:var></h1>
+    <a href="<j2:var>album.source.path | string | relative_to(folder.path)</j2:var>">Home:
+        <j2:var>album.source.path | string | relative_to(folder.path)</j2:var></a>
 
     <ul id="folders">
     <j2:block> for subfolder in folder.subfolders </j2:block>
