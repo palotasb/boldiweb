@@ -11,6 +11,7 @@ from PIL import Image
 from unidecode import unidecode
 
 from boldibuild import Build
+
 # source folder -> image list
 # image list -> exif db
 # exif db -> exif data
@@ -28,9 +29,7 @@ exiftool = ExifToolHelper().__enter__()
 
 
 def get_exif_tags(image_path: Path) -> dict[str, Any]:
-    raw_tags = exiftool.get_tags(str(image_path), RELEVANT_EXIF_TAGS)[
-        0
-    ]
+    raw_tags = exiftool.get_tags(str(image_path), RELEVANT_EXIF_TAGS)[0]
     tags = collections.defaultdict(dict)
     for key, value in raw_tags.items():
         assert isinstance(key, str)
