@@ -3,13 +3,20 @@ import collections
 import re
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from pprint import pformat
 from typing import Any
 
 import jinja2
 from exiftool import ExifToolHelper
 from PIL import Image
 from unidecode import unidecode
+
+from boldibuild import Build
+# source folder -> image list
+# image list -> exif db
+# exif db -> exif data
+# image list + exif db -> output images
+# output images + templates -> output html
+
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
@@ -33,7 +40,7 @@ def get_exif_tags(image_path: Path) -> dict[str, Any]:
             category, tag = key.split(":", 1)
             tags[category][tag] = value
     tags["SourceFile"] = image_path.name
-    return tags
+    return dict(tags)
 
 
 @dataclass(eq=True, order=True, frozen=True)
