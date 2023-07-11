@@ -1,11 +1,8 @@
 import abc
 import json
 from collections import defaultdict
-from contextlib import AbstractContextManager
-from dataclasses import InitVar, dataclass, field
-from io import IOBase
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 Target = str
 Stamp = str
@@ -22,11 +19,11 @@ class BuildDB:
 
     def load(self, path):
         path = Path(path)
-        with open(path, "r") as fp:
-            try:
+        try:
+            with open(path, "r") as fp:
                 build_db_json = json.load(fp)
-            except json.JSONDecodeError:
-                build_db_json = {}
+        except (json.JSONDecodeError, OSError):
+            build_db_json = {}
         build_db_json = build_db_json if isinstance(build_db_json, dict) else {}
 
         self.targets = defaultdict(Stamp)
@@ -39,7 +36,14 @@ class BuildDB:
     def save(self, path):
         path = Path(path)
         with open(path, "w") as fp:
-            json.dump(vars(self), fp)
+            print(f"{self.targets=!r} {self.dependencies=!r}")
+            json.dump(
+                {
+                    "targets": dict(self.targets),
+                    "dependencies": dict(self.dependencies),
+                },
+                fp,
+            )
 
 
 @dataclass
@@ -58,6 +62,14 @@ class Build(abc.ABC):
     def stamp(self, target: Target) -> Stamp:
         raise NotImplementedError
 
+    def stamp_file_stat(self, target: Target) -> Stamp:
+        try:
+            s = Path(target).stat()
+            # skipped: st_nlink, st_atime_ns because they don't indicate the file's changed
+            return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
+        except OSError:
+            return ""
+
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
         return a and b and a == b
 
@@ -65,13 +77,14 @@ class Build(abc.ABC):
         self.db.dependencies[target][dependency] = self.stamp(dependency)
 
     def rebuild(self, target: Target) -> bool:
-        old_stamp = self.db.targets.pop(target)
-        _ = self.db.dependencies.pop(target)
+        old_stamp = self.db.targets.pop(target, "")
+        _ = self.db.dependencies.pop(target, None)
         self.build_implementation(target)
         self.db.targets[target] = self.stamp(target)
         return self.stamps_match(old_stamp, self.db.targets[target])
 
     def build(self, target: Target) -> bool:
+        print(f"build({target=!r})")
         old_stamp = self.db.targets[target]
         cur_stamp = self.stamp(target)
         if not self.stamps_match(old_stamp, cur_stamp):

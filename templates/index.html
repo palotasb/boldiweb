@@ -9,13 +9,13 @@
         root | relative_to(folder.path)</j2:var></a>
 
     <ul id="folders">
-    <j2:block> for subfolder in folder.subfolders </j2:block>
+    <j2:block> for subfolder in folder.subfolders.values() </j2:block>
         <li><a href="<j2:var>subfolder.path | relative_to(folder.path)</j2:var>"><j2:var>subfolder.orig_name</j2:var></a></li>
     <j2:block> endfor </j2:block>
     </ul>
     
     <ul id="images">
-    <j2:block> for image in folder.images </j2:block>
+    <j2:block> for image in folder.images.values() </j2:block>
         <li>
             IMG: <j2:var>image.path | relative_to(folder.path)</j2:var> [<j2:var>image.orig_name</j2:var>]
         </li>
