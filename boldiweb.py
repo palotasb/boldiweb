@@ -44,155 +44,146 @@ def get_exif_tags(image_path: Path) -> dict[str, Any]:
     return dict(tags)
 
 
+def relative_to(path: Path, other: Path) -> Path:
+    path, other = Path(path), Path(other)  # actually accept str objects too
+    for i, relative_to_parents in enumerate([other] + list(other.parents)):
+        if path.is_relative_to(relative_to_parents):
+            return Path(*([Path("..")] * i)) / path.relative_to(relative_to_parents)
+
+
+def to_safe_ascii(s: str) -> str:
+    return NON_URL_SAFE_RE.sub("_", unidecode(s))
+
+
 @dataclass(eq=True, order=True, frozen=True)
 class SourceImage:
-    path: Path
+    abs_path: Path
+    rel_path: Path
 
 
 @dataclass(eq=True, order=True, frozen=True)
 class SourceFolder:
-    path: Path
-    subfolders: list["SourceFolder"] = field(default_factory=list, init=False)
-    images: list[SourceImage] = field(default_factory=list, init=False)
-    ignored_items: list[Path] = field(default_factory=list, init=False)
+    abs_path: Path
+    rel_path: Path
+    subfolders: dict[str, "SourceFolder"] = field(init=False, default_factory=dict)
+    images: dict[str, SourceImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        for item in sorted(self.path.iterdir()):
-            if (
-                item.is_file()
-                and item.suffix.upper() in IMAGE_EXTENSIONS
-                and not item.name.startswith(".")
-            ):
-                self.images.append(SourceImage(item))
-            elif item.is_dir() and not item.name.startswith("."):
-                self.subfolders.append(SourceFolder(item))
-            else:
-                self.ignored_items.append(item)
+        for abs_sub_path in sorted(self.abs_path.iterdir()):
+            name = abs_sub_path.name
+            if name.startswith("."):
+                pass
+            elif abs_sub_path.is_file() and abs_sub_path.suffix.upper() in IMAGE_EXTENSIONS:
+                self.images[name] = SourceImage(abs_sub_path, self.rel_path / name)
+            elif abs_sub_path.is_dir():
+                self.subfolders[name] = SourceFolder(abs_sub_path, self.rel_path / name)
 
     def __hash__(self) -> int:
-        return hash(self.path)
-
-
-def full_relative_to(target: Path, relative_to: Path) -> Path:
-    target = Path(target)  # actually accept str objects too
-    relative_to = Path(relative_to)
-    for i, relative_to_parents in enumerate([relative_to] + list(relative_to.parents)):
-        if target.is_relative_to(relative_to_parents):
-            return Path(*([Path("..")] * i)) / target.relative_to(relative_to_parents)
-
-
-def ascii_path(path: Path) -> Path:
-    path_str = unidecode(str(path))
-    path_str = NON_URL_SAFE_RE.sub("_", path_str)
-    return Path(path_str)
+        return hash(self.abs_path)
 
 
 @dataclass(eq=True, order=True, frozen=True)
 class TargetImage:
-    source_image: SourceImage
-    path: Path
-    orig_path: Path
-    exif_path: Path = field(init=False)
+    source: SourceImage
+    abs_path: Path
+    rel_path: Path
 
-    def __post_init__(self):
-        super().__setattr__("exif_path", self.path.with_suffix(".exif.json"))
+    @property
+    def exif_json_abs_path(self) -> Path:
+        return self.abs_path.with_suffix(".exif.json")
 
 
 @dataclass(eq=True, order=True, frozen=True)
 class TargetFolder:
-    source_folder: SourceFolder
-    path: Path
-    orig_path: Path
+    source: SourceFolder
+    abs_path: Path
+    rel_path: Path
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        for source_subfolder in self.source_folder.subfolders:
-            name = Path(source_subfolder.path.name)
-            target_folder = TargetFolder(
-                source_subfolder,
-                self.path / ascii_path(name),
-                self.orig_path / name,
+        for source_subfolder in self.source.subfolders.values():
+            safe_ascii_name = to_safe_ascii(source_subfolder.abs_path.name)
+            subfolder = TargetFolder(
+                source_subfolder, self.abs_path / safe_ascii_name, self.rel_path / safe_ascii_name
             )
-            self.subfolders[target_folder.path.name] = target_folder
-        for source_image in self.source_folder.images:
-            name = Path(source_image.path.name)
-            target_image = TargetImage(
-                source_image, self.path / ascii_path(name), self.orig_path / name
+            self.subfolders[safe_ascii_name] = subfolder
+        for source_image in self.source.images.values():
+            safe_ascii_name = to_safe_ascii(source_image.abs_path.name)
+            image = TargetImage(
+                source_image, self.abs_path / safe_ascii_name, self.rel_path / safe_ascii_name
             )
-            self.images[target_image.path.name] = target_image
+            self.images[safe_ascii_name] = image
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
-        if path.is_absolute():
+        if path.is_absolute() and path.is_relative_to(self.abs_path):
+            path = path.relative_to(self.abs_path)
+        elif path.is_absolute():
             return None
-        elif path == Path("."):
+
+        if path == Path("."):
             return self
         else:
             subfolder = self.subfolders.get(path.parts[0])
-            if subfolder is not None:
-                return subfolder.path_to_folder(Path(*path.parts[1:]))
-            else:
-                return None
+            return subfolder.path_to_folder(Path(*path.parts[1:])) if subfolder else None
 
     def path_to_image(self, path: Path) -> Optional[TargetImage]:
         folder = self.path_to_folder(Path(*path.parts[:-1]))
-        if folder is not None:
-            return folder.images.get(path.name)
-        else:
-            return None
+        return folder.images.get(path.name) if folder else None
 
-    def iter_images(self) -> Generator[TargetImage, None, None]:
+    def iter_all_images(self) -> Generator[TargetImage, None, None]:
         for image in itertools.chain(
             self.images.values(),
-            *[subfolder.iter_images() for subfolder in self.subfolders.values()],
+            *[subfolder.iter_all_images() for subfolder in self.subfolders.values()],
         ):
             yield image
 
 
 @dataclass
 class TargetImageHandler(FileHandler):
-    album: "Album"
+    root_target_folder: TargetFolder
+
+    def maybe_target_image(self, target: Stamp) -> Optional[TargetImage]:
+        return self.root_target_folder.path_to_image(Path(target))
+
+    def target_image(self, target: Stamp) -> TargetImage:
+        maybe_target_image = self.maybe_target_image(target)
+        assert maybe_target_image
+        return maybe_target_image
 
     def can_handle(self, target: Stamp) -> bool:
-        return self.album.target.path_to_image(Path(target)) is not None
+        return self.maybe_target_image(target) is not None
 
     def stamp(self, target: Stamp) -> Stamp:
-        image = self.album.target.path_to_image(Path(target))
-        assert isinstance(image, TargetImage)
-        return "; ".join(
-            [
-                super().stamp(self.album.target_abs_path / image.path),
-                super().stamp(self.album.target_abs_path / image.exif_path),
-            ]
-        )
+        image = self.target_image(target)
+        return "; ".join([super().stamp(image.abs_path), super().stamp(image.exif_json_abs_path)])
 
     def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
-        image = self.album.target.path_to_image(Path(target))
-        assert isinstance(image, TargetImage)
-        (self.album.target_abs_path / image.path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(image.source_image.path, self.album.target_abs_path / image.path)
+        image = self.target_image(target)
+
+        image.abs_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(image.source.abs_path, image.abs_path)
 
         # TODO: create thumbnail images
 
-        with open(self.album.target_abs_path / image.exif_path, "w") as exif_fp:
-            json.dump(get_exif_tags(image.source_image.path), exif_fp, indent=2)
+        with open(image.exif_json_abs_path, "w") as exif_json_fp:
+            json.dump(get_exif_tags(image.source.abs_path), exif_json_fp, indent=2)
 
-        register_dependency(str(image.source_image.path))
+        register_dependency(str(image.source.abs_path))
 
 
 @dataclass
 class Album(Build):
-    target_path: InitVar[Path]
     source_path: InitVar[Path]
-    source: SourceFolder = field(init=False)
-    target: TargetFolder = field(init=False)
-    target_abs_path: Path = field(init=False)
+    target_path: InitVar[Path]
+    root_source_folder: SourceFolder = field(init=False)
+    root_target_folder: TargetFolder = field(init=False)
     env: jinja2.Environment = field(init=False)
 
-    def __post_init__(self, target_path: Path, source_path: Path):
-        self.source = SourceFolder(source_path)
-        self.target = TargetFolder(self.source, Path("."), Path("."))
-        self.target_abs_path = target_path
+    def __post_init__(self, source_path: Path, target_path: Path):
+        self.root_source_folder = SourceFolder(source_path, Path("."))
+        self.root_target_folder = TargetFolder(self.root_source_folder, target_path, Path("."))
+
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
             autoescape=True,
@@ -210,31 +201,30 @@ class Album(Build):
             "album": self,
             "root": Path("."),
         }
-        self.env.filters["relative_to"] = full_relative_to
-        self.env.filters["ascii_path"] = ascii_path
+        self.env.filters["relative_to"] = relative_to
+        self.env.filters["to_safe_ascii"] = to_safe_ascii
+
         self.load_build_db()
-        self.handlers.append(TargetImageHandler(self))
+        self.handlers.append(TargetImageHandler(self.root_target_folder))
         self.handlers.append(SourceFileHandler())
 
     def render(self):
-        # DONE Create output folder structure
-        for image in self.target.iter_images():
-            self.build(str(image.path))
+        for target_image in self.root_target_folder.iter_all_images():
+            self.build(str(target_image.abs_path))
 
-        # TODO Call .build() on output images
-        self.render_folder(self.target)
+        self.render_folder(self.root_target_folder)
         self.save_build_db()
 
-    def render_folder(self, folder: TargetFolder):
-        target_abs_path = self.target_abs_path / folder.path / "index.html"
-        target_abs_path.parent.mkdir(parents=True, exist_ok=True)
+    def render_folder(self, target_folder: TargetFolder):
+        index_html = target_folder.abs_path / "index.html"
+        target_folder.abs_path.mkdir(parents=True, exist_ok=True)
 
         index_template = self.env.get_template("index.html")
-        stream = index_template.stream({"folder": folder})
-        with open(target_abs_path, "w") as fp:
+        stream = index_template.stream({"folder": target_folder})
+        with open(index_html, "w") as fp:
             stream.dump(fp)
 
-        for subfolder in folder.subfolders.values():
+        for subfolder in target_folder.subfolders.values():
             self.render_folder(subfolder)
 
 
@@ -245,7 +235,9 @@ def main():
     args = parser.parse_args()
     source_path: Path = args.source_path
     target_path: Path = args.target_path
-    album = Album(target_path / "build.db.json", target_path, source_path)
+    source_path = source_path.absolute()
+    target_path = target_path.absolute()
+    album = Album(target_path / "build.db.json", source_path, target_path)
     album.render()
 
 
