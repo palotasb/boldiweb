@@ -8,6 +8,7 @@ from pathlib import Path
 
 Target = str
 Stamp = str
+RegisterDependencyCallback = Callable[[Target], None]
 
 
 @dataclass
@@ -17,8 +18,7 @@ class BuildDB:
         default_factory=lambda: defaultdict(dict[Target, Stamp])
     )
 
-    def load(self, path):
-        path = Path(path)
+    def load(self, path: Path):
         try:
             with open(path, "r") as fp:
                 build_db_json = json.load(fp)
@@ -30,23 +30,12 @@ class BuildDB:
         self.targets.update(build_db_json.get("targets", {}))
 
         self.dependencies = defaultdict(dict)
-        for target, targets_deps in build_db_json.get("dependencies", {}).items():
-            self.dependencies[target] = targets_deps
+        self.dependencies.update(build_db_json.get("dependencies", {}))
 
-    def save(self, path):
-        path = Path(path)
+    def save(self, path: Path):
         with open(path, "w") as fp:
-            json.dump(
-                {
-                    "targets": dict(self.targets),
-                    "dependencies": dict(self.dependencies),
-                },
-                fp,
-                indent=2,
-            )
-
-
-RegisterDependencyCallback = Callable[[Target], None]
+            build_db_json = {"targets": dict(self.targets), "dependencies": dict(self.dependencies)}
+            json.dump(build_db_json, fp, indent=2)
 
 
 class Handler:

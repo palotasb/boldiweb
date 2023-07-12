@@ -12,13 +12,7 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import (
-    Build,
-    FileHandler,
-    RegisterDependencyCallback,
-    SourceFileHandler,
-    Stamp,
-)
+from boldibuild import Build, FileHandler, RegisterDependencyCallback, SourceFileHandler, Stamp
 
 # source folder -> image list
 # image list -> exif db
