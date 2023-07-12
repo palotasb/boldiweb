@@ -174,6 +174,7 @@ class TargetImageHandler(FileHandler):
             json.dump(get_exif_tags(image.source.abs_path), exif_json_fp, indent=2)
 
         register_dependency(str(image.source.abs_path))
+        register_dependency(__file__)
 
 
 @dataclass
