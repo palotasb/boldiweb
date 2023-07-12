@@ -31,17 +31,21 @@ exiftool = ExifToolHelper().__enter__()
 
 
 def get_exif_tags(image_path: Path) -> dict[str, Any]:
-    raw_tags = exiftool.get_tags(str(image_path), RELEVANT_EXIF_TAGS)[0]
-    tags = collections.defaultdict(dict)
-    for key, value in raw_tags.items():
+    raw_exif_tags = exiftool.get_tags(str(image_path), RELEVANT_EXIF_TAGS)[0]
+    assert isinstance(raw_exif_tags, dict)
+    exif_tags = collections.defaultdict(dict)
+    for key, value in raw_exif_tags.items():
         assert isinstance(key, str)
         if ":" not in key:
-            tags[key] = value
+            exif_tags[key] = value
         else:
             category, tag = key.split(":", 1)
-            tags[category][tag] = value
-    tags["SourceFile"] = image_path.name
-    return dict(tags)
+            exif_tags[category][tag] = value
+    exif_tags["SourceFile"] = image_path.name
+    for category, category_tags in exif_tags.items():
+        if isinstance(category_tags, dict):
+            exif_tags[category] = dict(sorted(category_tags.items()))
+    return dict(exif_tags)
 
 
 def relative_to(path: Path, other: Path) -> Path:
