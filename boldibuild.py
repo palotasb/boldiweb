@@ -49,7 +49,7 @@ class Handler:
         return a and b and a == b
 
     def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
-        pass
+        return NotImplemented
 
 
 class FileHandler(Handler):
@@ -90,8 +90,9 @@ class Build(abc.ABC):
         handler = self.get_handler(target)
         old_stamp = self.db.targets.pop(target, None)
         _ = self.db.dependencies.pop(target, None)
-        handler.build_impl(target, partial(self.register_dependency, target))
-        self.db.targets[target] = handler.stamp(target)
+        build_impl_result = handler.build_impl(target, partial(self.register_dependency, target))
+        if build_impl_result is not NotImplemented:
+            self.db.targets[target] = handler.stamp(target)
         return old_stamp is not None and handler.stamps_match(old_stamp, self.db.targets[target])
 
     def build(self, target: Target) -> bool:
