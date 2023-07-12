@@ -52,7 +52,10 @@ class Handler:
         return NotImplemented
 
 
-class FileHandler(Handler):
+class SourceFileHandler(Handler):
+    def can_handle(self, target: Target) -> bool:
+        return True
+    
     def stamp(self, target: Target) -> Stamp:
         try:
             s = Path(target).stat()
@@ -60,11 +63,6 @@ class FileHandler(Handler):
             return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
         except OSError:
             return ""
-
-
-class SourceFileHandler(FileHandler):
-    def can_handle(self, target: Target) -> bool:
-        return True
 
 
 @dataclass

@@ -12,7 +12,7 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import Build, FileHandler, RegisterDependencyCallback, SourceFileHandler, Stamp
+from boldibuild import Build, RegisterDependencyCallback, SourceFileHandler, Stamp
 
 # source folder -> image list
 # image list -> exif db
@@ -144,7 +144,7 @@ class TargetFolder:
 
 
 @dataclass
-class TargetImageHandler(FileHandler):
+class TargetImageHandler(SourceFileHandler):
     root_target_folder: TargetFolder
 
     def maybe_target_image(self, target: Stamp) -> Optional[TargetImage]:
