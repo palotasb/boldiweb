@@ -98,11 +98,9 @@ class TargetImage:
     source_image: SourceImage
     path: Path
     orig_path: Path
-    orig_name: str = field(init=False)
     exif_path: Path = field(init=False)
 
     def __post_init__(self):
-        super().__setattr__("orig_name", self.orig_path.name)
         super().__setattr__("exif_path", self.path.with_suffix(".exif.json"))
 
 
@@ -111,12 +109,10 @@ class TargetFolder:
     source_folder: SourceFolder
     path: Path
     orig_path: Path
-    orig_name: str = field(init=False)
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        super().__setattr__("orig_name", self.orig_path.name)
         for source_subfolder in self.source_folder.subfolders:
             name = Path(source_subfolder.path.name)
             target_folder = TargetFolder(
@@ -176,14 +172,10 @@ class TargetImageHandler(FileHandler):
             ]
         )
 
-    def build_impl(
-        self, target: str, register_dependency: RegisterDependencyCallback
-    ) -> Stamp:
+    def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
         image = self.album.target.path_to_image(Path(target))
         assert isinstance(image, TargetImage)
-        (self.album.target_abs_path / image.path).parent.mkdir(
-            parents=True, exist_ok=True
-        )
+        (self.album.target_abs_path / image.path).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(image.source_image.path, self.album.target_abs_path / image.path)
 
         # TODO: create thumbnail images

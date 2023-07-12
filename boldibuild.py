@@ -12,9 +12,7 @@ Stamp = str
 
 @dataclass
 class BuildDB:
-    targets: defaultdict[Target, Stamp] = field(
-        default_factory=lambda: defaultdict(Stamp)
-    )
+    targets: defaultdict[Target, Stamp] = field(default_factory=lambda: defaultdict(Stamp))
     dependencies: defaultdict[Target, dict[Target, Stamp]] = field(
         default_factory=lambda: defaultdict(dict[Target, Stamp])
     )
@@ -61,9 +59,7 @@ class Handler:
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
         return a and b and a == b
 
-    def build_impl(
-        self, target: Target, register_dependency: RegisterDependencyCallback
-    ) -> Stamp:
+    def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
         pass
 
 
@@ -107,9 +103,7 @@ class Build(abc.ABC):
         _ = self.db.dependencies.pop(target, None)
         handler.build_impl(target, partial(self.register_dependency, target))
         self.db.targets[target] = handler.stamp(target)
-        return old_stamp is not None and handler.stamps_match(
-            old_stamp, self.db.targets[target]
-        )
+        return old_stamp is not None and handler.stamps_match(old_stamp, self.db.targets[target])
 
     def build(self, target: Target) -> bool:
         print(f"build({target=!r})")
