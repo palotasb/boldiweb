@@ -1,7 +1,9 @@
 import abc
 import json
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 
 Target = str
@@ -36,33 +38,37 @@ class BuildDB:
     def save(self, path):
         path = Path(path)
         with open(path, "w") as fp:
-            print(f"{self.targets=!r} {self.dependencies=!r}")
             json.dump(
                 {
                     "targets": dict(self.targets),
                     "dependencies": dict(self.dependencies),
                 },
                 fp,
+                indent=2,
             )
 
 
-@dataclass
-class Build(abc.ABC):
-    db_path: Path
-    db: BuildDB = field(init=False, default_factory=BuildDB)
+RegisterDependencyCallback = Callable[[Target], None]
 
-    def __post_init__(self):
-        self.load_build_db()
 
-    @abc.abstractmethod
-    def build_implementation(self, target: Target):
-        raise NotImplementedError
+class Handler:
+    def can_handle(self, target: Target) -> bool:
+        return False
 
-    @abc.abstractmethod
     def stamp(self, target: Target) -> Stamp:
-        raise NotImplementedError
+        return ""
 
-    def stamp_file_stat(self, target: Target) -> Stamp:
+    def stamps_match(self, a: Stamp, b: Stamp) -> bool:
+        return a and b and a == b
+
+    def build_impl(
+        self, target: Target, register_dependency: RegisterDependencyCallback
+    ) -> Stamp:
+        pass
+
+
+class FileHandler(Handler):
+    def stamp(self, target: Target) -> Stamp:
         try:
             s = Path(target).stat()
             # skipped: st_nlink, st_atime_ns because they don't indicate the file's changed
@@ -70,45 +76,69 @@ class Build(abc.ABC):
         except OSError:
             return ""
 
-    def stamps_match(self, a: Stamp, b: Stamp) -> bool:
-        return a and b and a == b
+
+class SourceFileHandler(FileHandler):
+    def can_handle(self, target: Target) -> bool:
+        return True
+
+
+@dataclass
+class Build(abc.ABC):
+    db_path: Path
+    handlers: list[Handler] = field(init=False, default_factory=list)
+    db: BuildDB = field(init=False, default_factory=BuildDB)
+
+    def __post_init__(self):
+        self.load_build_db()
+
+    def get_handler(self, target: Target) -> Handler:
+        for handler in self.handlers:
+            if handler.can_handle(target):
+                return handler
+        return Handler()
 
     def register_dependency(self, target: Target, dependency: Target):
-        self.db.dependencies[target][dependency] = self.stamp(dependency)
+        dep_handler = self.get_handler(dependency)
+        self.db.dependencies[target][dependency] = dep_handler.stamp(dependency)
 
     def rebuild(self, target: Target) -> bool:
-        old_stamp = self.db.targets.pop(target, "")
+        handler = self.get_handler(target)
+        old_stamp = self.db.targets.pop(target, None)
         _ = self.db.dependencies.pop(target, None)
-        self.build_implementation(target)
-        self.db.targets[target] = self.stamp(target)
-        return self.stamps_match(old_stamp, self.db.targets[target])
+        handler.build_impl(target, partial(self.register_dependency, target))
+        self.db.targets[target] = handler.stamp(target)
+        return old_stamp is not None and handler.stamps_match(
+            old_stamp, self.db.targets[target]
+        )
 
     def build(self, target: Target) -> bool:
         print(f"build({target=!r})")
+        handler = self.get_handler(target)
         old_stamp = self.db.targets[target]
-        cur_stamp = self.stamp(target)
-        if not self.stamps_match(old_stamp, cur_stamp):
+        cur_stamp = handler.stamp(target)
+        if not handler.stamps_match(old_stamp, cur_stamp):
             return self.rebuild(target)
 
         for dep, old_dep_stamp in self.db.dependencies[target].items():
-            # Do I care if the target is rebuilt and gets a new stamp? This happens if e.g.:
-            #   build 2a -> causes build 1a
+            # Do I care if the dep is rebuilt and gets a new stamp? This happens if e.g.:
+            #   trigger build 2a -> causes build 1a
             #   commit 1a to 1b change
-            #   build 1b (1 itself will have new stamp and be up to date, but 2a's dep not)
+            #   trigger build 1b (target 1 will new up-to-date stamp, but not 2a's dep 1)
             #   commit 1b to 1a change
-            #   build 2a -> causes build 1a
+            #   trigger build 2a -> causes build 1a
             #       1 was not up to date, build(1) returns False
             #       but stamp(1) matches old_dep_stamp
             #       and 2a was built with 1a, so I do NOT need to build it again
             # Ergo I don't care about dep's build results.
             _ = self.build(dep)
 
-            new_dep_stamp = self.stamp(dep)
-            target_dep_stamps_match = self.stamps_match(old_dep_stamp, new_dep_stamp)
-            if not target_dep_stamps_match:
+            dep_handler = self.get_handler(dep)
+            new_dep_stamp = dep_handler.stamp(dep)
+            if not dep_handler.stamps_match(old_dep_stamp, new_dep_stamp):
                 return self.rebuild(target)
 
-        return self.stamps_match(cur_stamp, cur_stamp)
+        # the earlier handler.stamps_match(old_stamp, cur_stamp) call returned True
+        return True
 
     def load_build_db(self):
         self.db.load(self.db_path)

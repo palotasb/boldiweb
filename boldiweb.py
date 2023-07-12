@@ -12,7 +12,13 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import Build, Stamp, Target
+from boldibuild import (
+    Build,
+    FileHandler,
+    RegisterDependencyCallback,
+    SourceFileHandler,
+    Stamp,
+)
 
 # source folder -> image list
 # image list -> exif db
@@ -154,6 +160,41 @@ class TargetFolder:
 
 
 @dataclass
+class TargetImageHandler(FileHandler):
+    album: "Album"
+
+    def can_handle(self, target: Stamp) -> bool:
+        return self.album.target.path_to_image(Path(target)) is not None
+
+    def stamp(self, target: Stamp) -> Stamp:
+        image = self.album.target.path_to_image(Path(target))
+        assert isinstance(image, TargetImage)
+        return "; ".join(
+            [
+                super().stamp(self.album.target_abs_path / image.path),
+                super().stamp(self.album.target_abs_path / image.exif_path),
+            ]
+        )
+
+    def build_impl(
+        self, target: str, register_dependency: RegisterDependencyCallback
+    ) -> Stamp:
+        image = self.album.target.path_to_image(Path(target))
+        assert isinstance(image, TargetImage)
+        (self.album.target_abs_path / image.path).parent.mkdir(
+            parents=True, exist_ok=True
+        )
+        shutil.copy(image.source_image.path, self.album.target_abs_path / image.path)
+
+        # TODO: create thumbnail images
+
+        with open(self.album.target_abs_path / image.exif_path, "w") as exif_fp:
+            json.dump(get_exif_tags(image.source_image.path), exif_fp, indent=2)
+
+        register_dependency(str(image.source_image.path))
+
+
+@dataclass
 class Album(Build):
     target_path: InitVar[Path]
     source_path: InitVar[Path]
@@ -186,41 +227,8 @@ class Album(Build):
         self.env.filters["relative_to"] = full_relative_to
         self.env.filters["ascii_path"] = ascii_path
         self.load_build_db()
-
-    def stamp_target_image(self, image: TargetImage):
-        return "; ".join(
-            [
-                self.stamp_file_stat(self.target_abs_path / image.path),
-                self.stamp_file_stat(self.target_abs_path / image.exif_path),
-            ]
-        )
-
-    def build_target_image(self, image: TargetImage):
-        (self.target_abs_path / image.path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(image.source_image.path, self.target_abs_path / image.path)
-
-        # TODO: create thumbnail images
-
-        with open(self.target_abs_path / image.exif_path, "w") as exif_fp:
-            json.dump(get_exif_tags(image.source_image.path), exif_fp, indent=2)
-
-        self.register_dependency(str(image.path), str(image.source_image.path))
-
-    def stamp(self, target: Target) -> Stamp:
-        if image := self.target.path_to_image(Path(target)):
-            return self.stamp_target_image(image)
-        else:
-            path = Path(target)
-            if path.is_absolute() and path.is_file():
-                return self.stamp_file_stat(target)
-            else:
-                raise NotImplementedError(f"stamp not implemented for {target=!r}")
-
-    def build_implementation(self, target: Target):
-        if image := self.target.path_to_image(Path(target)):
-            self.build_target_image(image)
-        else:
-            NotImplemented  # but do nothing
+        self.handlers.append(TargetImageHandler(self))
+        self.handlers.append(SourceFileHandler())
 
     def render(self):
         # DONE Create output folder structure
