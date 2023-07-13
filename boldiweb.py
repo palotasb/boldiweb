@@ -12,7 +12,7 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import Build, RegisterDependencyCallback, SourceFileHandler, Stamp
+from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp
 
 # source folder -> image list
 # image list -> exif db
@@ -144,11 +144,11 @@ class TargetFolder:
 
 
 @dataclass
-class TargetImageHandler(SourceFileHandler):
-    root_target_folder: TargetFolder
+class TargetImageHandler(FileHandler):
+    target_root: TargetFolder
 
     def maybe_target_image(self, target: Stamp) -> Optional[TargetImage]:
-        return self.root_target_folder.path_to_image(Path(target))
+        return self.target_root.path_to_image(Path(target))
 
     def target_image(self, target: Stamp) -> TargetImage:
         maybe_target_image = self.maybe_target_image(target)
@@ -181,13 +181,13 @@ class TargetImageHandler(SourceFileHandler):
 class Album(Build):
     source_path: InitVar[Path]
     target_path: InitVar[Path]
-    root_source_folder: SourceFolder = field(init=False)
-    root_target_folder: TargetFolder = field(init=False)
+    source_root: SourceFolder = field(init=False)
+    target_root: TargetFolder = field(init=False)
     env: jinja2.Environment = field(init=False)
 
     def __post_init__(self, source_path: Path, target_path: Path):
-        self.root_source_folder = SourceFolder(source_path, Path("."))
-        self.root_target_folder = TargetFolder(self.root_source_folder, target_path, Path("."))
+        self.source_root = SourceFolder(source_path, Path("."))
+        self.target_root = TargetFolder(self.source_root, target_path, Path("."))
 
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
@@ -210,14 +210,14 @@ class Album(Build):
         self.env.filters["to_safe_ascii"] = to_safe_ascii
 
         self.load_build_db()
-        self.handlers.append(TargetImageHandler(self.root_target_folder))
-        self.handlers.append(SourceFileHandler())
+        self.handlers.append(TargetImageHandler(self.target_root))
+        self.handlers.append(FileHandler())
 
     def render(self):
-        for target_image in self.root_target_folder.iter_all_images():
+        for target_image in self.target_root.iter_all_images():
             self.build(str(target_image.abs_path))
 
-        self.render_folder(self.root_target_folder)
+        self.render_folder(self.target_root)
         self.save_build_db()
 
     def render_folder(self, target_folder: TargetFolder):

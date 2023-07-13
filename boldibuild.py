@@ -49,13 +49,13 @@ class Handler:
         return a and b and a == b
 
     def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
-        pass
+        raise NotImplementedError(f"{self} cannot build {target!r}")
 
 
-class SourceFileHandler(Handler):
+class FileHandler(Handler):
     def can_handle(self, target: Target) -> bool:
         return True
-    
+
     def stamp(self, target: Target) -> Stamp:
         try:
             s = Path(target).stat()
@@ -80,32 +80,31 @@ class Build(abc.ABC):
     def register_dependency(self, target: Target, dependency: Target):
         dep_handler = self.get_handler(dependency)
         self.db.dependencies[target][dependency] = dep_handler.stamp(dependency)
-        self.db.dependencies[dependency]  # touch
 
-    def rebuild(self, target: Target):
-        print(f"rebuild({target=!r})")
+    def rebuild(self, target: Target, level: int = 0):
+        print(f"{' '*2*level}rebuild({target=!r})")
         handler = self.get_handler(target)
         self.db.dependencies.pop(target, None)
         handler.build_impl(target, partial(self.register_dependency, target))
         self.db.targets[target] = handler.stamp(target)
 
-    def build(self, target: Target):
-        # print(f"build({target=!r})")
+    def build(self, target: Target, level: int = 0):
+        print(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
         old_stamp = self.db.targets[target]
         cur_stamp = handler.stamp(target)
         if not handler.stamps_match(old_stamp, cur_stamp):
-            self.rebuild(target)
+            self.rebuild(target, level + 1)
             return
 
         for dep, old_dep_stamp in self.db.dependencies[target].items():
-            self.build(dep)
+            if dep in self.db.targets:
+                self.build(dep, level + 1)
             dep_handler = self.get_handler(dep)
             new_dep_stamp = dep_handler.stamp(dep)
             if not dep_handler.stamps_match(old_dep_stamp, new_dep_stamp):
-                self.rebuild(target)
+                self.rebuild(target, level + 1)
                 return
-
 
     def load_build_db(self):
         self.db.load(self.db_path)
