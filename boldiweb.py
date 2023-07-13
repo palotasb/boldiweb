@@ -4,6 +4,7 @@ import itertools
 import json
 import re
 import shutil
+import logging
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
@@ -19,6 +20,9 @@ from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp
 # exif db -> exif data
 # image list + exif db -> output images
 # output images + templates -> output html
+
+
+logger = logging.getLogger(__name__)
 
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
@@ -234,6 +238,8 @@ class Album(Build):
 
 
 def main():
+    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler())
     parser = argparse.ArgumentParser()
     parser.add_argument("source_path", type=Path)
     parser.add_argument("target_path", type=Path)

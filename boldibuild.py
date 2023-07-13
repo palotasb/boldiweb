@@ -1,5 +1,6 @@
 import abc
 import json
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -9,6 +10,9 @@ from pathlib import Path
 Target = str
 Stamp = str
 RegisterDependencyCallback = Callable[[Target], None]
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -82,14 +86,14 @@ class Build(abc.ABC):
         self.db.dependencies[target][dependency] = dep_handler.stamp(dependency)
 
     def rebuild(self, target: Target, level: int = 0):
-        print(f"{' '*2*level}rebuild({target=!r})")
+        logger.info(f"{' '*2*level}rebuild({target=!r})")
         handler = self.get_handler(target)
         self.db.dependencies.pop(target, None)
         handler.build_impl(target, partial(self.register_dependency, target))
         self.db.targets[target] = handler.stamp(target)
 
     def build(self, target: Target, level: int = 0):
-        print(f"{' '*2*level}build({target=!r})")
+        logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
         old_stamp = self.db.targets[target]
         cur_stamp = handler.stamp(target)
