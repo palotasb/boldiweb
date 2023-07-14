@@ -77,14 +77,14 @@ class SourceFolder:
     images: dict[str, SourceImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
-        for abs_sub_path in sorted(self.path.iterdir()):
-            name = abs_sub_path.name
+        for item in sorted(self.path.iterdir()):
+            name = item.name
             if name.startswith("."):
                 pass
-            elif abs_sub_path.is_file() and abs_sub_path.suffix.upper() in IMAGE_EXTENSIONS:
-                self.images[name] = SourceImage(abs_sub_path)
-            elif abs_sub_path.is_dir():
-                self.subfolders[name] = SourceFolder(abs_sub_path)
+            elif item.is_file() and item.suffix.upper() in IMAGE_EXTENSIONS:
+                self.images[name] = SourceImage(item)
+            elif item.is_dir():
+                self.subfolders[name] = SourceFolder(item)
 
 
 @dataclass
