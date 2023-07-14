@@ -14,7 +14,7 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp, Target
+from boldibuild import Builder, BuildSystem, FileHandler, Stamp, Target
 
 # source folder -> image list
 # image list -> exif db
@@ -159,19 +159,17 @@ class TargetFolderHandler(FileHandler):
     def can_handle(self, target: Target) -> bool:
         return self.maybe_target_folder(target) is not None
 
-    def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
+    def rebuild_impl(self, target: Target, builder: Builder):
         target_folder = self.target_folder(target)
 
         target_folder.path.mkdir(parents=True, exist_ok=True)
-        register_dependency(target_folder.source.path)
+        builder.add_source(target_folder.source.path)
 
         for subfolder in target_folder.subfolders.values():
-            self.album.build(subfolder.path)
-            register_dependency(subfolder.path)
+            builder.build(subfolder.path)
 
         for image in target_folder.images.values():
-            self.album.build(image.path)
-            register_dependency(image.path)
+            builder.build(image.path)
 
         index_html = target_folder.path / "index.html"
 
@@ -180,7 +178,7 @@ class TargetFolderHandler(FileHandler):
         with open(index_html, "w") as fp:
             stream.dump(fp)
         for template_file in (HERE / "templates").iterdir():
-            register_dependency(template_file)
+            builder.add_source(template_file)
 
 
 @dataclass
@@ -202,7 +200,7 @@ class TargetImageHandler(FileHandler):
         image = self.target_image(target)
         return f"{super().stamp(image.path)}; {super().stamp(image.exif_json_path)}"
 
-    def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
+    def rebuild_impl(self, target: str, builder: Builder):
         image = self.target_image(target)
 
         shutil.copy(image.source.path, image.path)
@@ -212,12 +210,12 @@ class TargetImageHandler(FileHandler):
         with open(image.exif_json_path, "w") as exif_json_fp:
             json.dump(get_exif_tags(image.source.path), exif_json_fp, indent=2)
 
-        register_dependency(image.source.path)
-        register_dependency(__file__)
+        builder.add_source(image.source.path)
+        builder.add_source(__file__)
 
 
 @dataclass
-class Album(Build):
+class Album(BuildSystem):
     source_path: InitVar[Path]
     target_path: InitVar[Path]
     source_root: SourceFolder = field(init=False)

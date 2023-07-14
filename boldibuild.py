@@ -8,7 +8,6 @@ from pathlib import Path
 
 Target = str
 Stamp = str
-RegisterDependencyCallback = Callable[[Target], None]
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +46,12 @@ class BuildDB:
             json.dump(build_db_json, fp, indent=2)
 
 
+@dataclass
+class Builder:
+    build: Callable[[Target], None]
+    add_source: Callable[[Target], None]
+
+
 class Handler:
     def can_handle(self, target: Target) -> bool:
         return False
@@ -57,7 +62,7 @@ class Handler:
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
         return a and b and a == b
 
-    def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
+    def rebuild_impl(self, target: Target, builder: Builder):
         raise NotImplementedError(f"{self} cannot build {target!r}")
 
 
@@ -75,7 +80,7 @@ class FileHandler(Handler):
 
 
 @dataclass
-class Build:
+class BuildSystem:
     db_path: Path
     handlers: list[Handler] = field(init=False, default_factory=list)
     db: BuildDB = field(init=False, default_factory=BuildDB)
@@ -98,8 +103,18 @@ class Build:
         logger.info(f"{' '*2*level}rebuild({target=!r})")
         handler = self.get_handler(target)
         self.db.dependencies.pop(target, None)
-        handler.build_impl(target, partial(self.register_dependency, target))
+        builder = Builder(
+            partial(self.build_as_dependency, target, level=level + 1),
+            partial(self.register_dependency, target),
+        )
+        handler.rebuild_impl(target, builder)
         self.db.targets[target] = handler.stamp(target)
+
+    def build_as_dependency(self, target: Target, dependency: Target, level: int = 0):
+        target = str(target)
+        dependency = str(dependency)
+        self.build(dependency, level)
+        self.register_dependency(target, dependency)
 
     def build(self, target: Target, level: int = 0):
         target = str(target)
