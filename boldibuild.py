@@ -21,7 +21,7 @@ logger.addHandler(logging.NullHandler())
 
 @dataclass
 class BuildDB:
-    targets: defaultdict[Target, Stamp] = field(default_factory=lambda: defaultdict(Stamp))
+    targets: dict[Target, Stamp] = field(default_factory=dict)
     dependencies: defaultdict[Target, dict[Target, Stamp]] = field(
         default_factory=lambda: defaultdict(dict[Target, Stamp])
     )
@@ -34,15 +34,14 @@ class BuildDB:
             build_db_json = {}
         build_db_json = build_db_json if isinstance(build_db_json, dict) else {}
 
-        self.targets = defaultdict(Stamp)
-        self.targets.update(build_db_json.get("targets", {}))
+        self.targets = build_db_json.get("targets", {})
 
         self.dependencies = defaultdict(dict)
         self.dependencies.update(build_db_json.get("dependencies", {}))
 
     def save(self, path: Path):
         with open(path, "w") as fp:
-            build_db_json = {"targets": dict(self.targets), "dependencies": dict(self.dependencies)}
+            build_db_json = {"targets": self.targets, "dependencies": dict(self.dependencies)}
             json.dump(build_db_json, fp, indent=2)
 
 
@@ -120,9 +119,8 @@ class BuildSystem:
         target = str(target)
         logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
-        old_stamp = self.db.targets[target]
-        cur_stamp = handler.stamp(target)
-        if not handler.stamps_match(old_stamp, cur_stamp):
+        old_stamp = self.db.targets.get(target)
+        if old_stamp is None or not handler.stamps_match(old_stamp, handler.stamp(target)):
             self.rebuild(target, level + 1)
             return
 
