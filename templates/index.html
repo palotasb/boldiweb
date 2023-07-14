@@ -15,11 +15,7 @@
     
     <ul id="images">
     <j2:block> for name, image in folder.images.items() </j2:block>
-        <li>
-            IMG: <j2:var>name</j2:var> [<j2:var>image.source.path.name</j2:var>]
-            <br />
-            EXIF: <j2:var>image.exif_data.EXIF.Artist</j2:var>
-        </li>
+        <j2:block>include "thumbnail.html"</j2:block>
     <j2:block> endfor </j2:block>
     </ul>
 </body>

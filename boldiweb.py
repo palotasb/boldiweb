@@ -186,7 +186,7 @@ class TargetImageHandler(FileHandler):
 
     def stamp(self, target: Stamp) -> Stamp:
         image = self.target_image(target)
-        return "; ".join([super().stamp(image.path), super().stamp(image.exif_json_path)])
+        return f"{super().stamp(image.path)}; {super().stamp(image.exif_json_path)}"
 
     def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
         image = self.target_image(target)
