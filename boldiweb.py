@@ -64,13 +64,13 @@ def to_safe_ascii(s: str) -> str:
     return NON_URL_SAFE_RE.sub("_", unidecode(s))
 
 
-@dataclass(eq=True, order=True, frozen=True)
+@dataclass
 class SourceImage:
     abs_path: Path
     rel_path: Path
 
 
-@dataclass(eq=True, order=True, frozen=True)
+@dataclass
 class SourceFolder:
     abs_path: Path
     rel_path: Path
@@ -91,7 +91,7 @@ class SourceFolder:
         return hash(self.abs_path)
 
 
-@dataclass(eq=True, order=True, frozen=True)
+@dataclass
 class TargetImage:
     source: SourceImage
     parent: "TargetFolder"
@@ -103,7 +103,7 @@ class TargetImage:
         return self.abs_path.with_suffix(".exif.json")
 
 
-@dataclass(eq=True, order=True, frozen=True)
+@dataclass
 class TargetFolder:
     source: SourceFolder
     parent: Optional["TargetFolder"]
