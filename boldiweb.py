@@ -218,13 +218,11 @@ class TargetImageHandler(FileHandler):
 class Album(BuildSystem):
     source_path: InitVar[Path]
     target_path: InitVar[Path]
-    source_root: SourceFolder = field(init=False)
     target_root: TargetFolder = field(init=False)
     env: jinja2.Environment = field(init=False)
 
     def __post_init__(self, source_path: Path, target_path: Path):
-        self.source_root = SourceFolder(source_path)
-        self.target_root = TargetFolder(self.source_root, None, target_path)
+        self.target_root = TargetFolder(SourceFolder(source_path), None, target_path)
 
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
