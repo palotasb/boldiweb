@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+# TODO ideas:
+# - Parallelize
+# - Serialize build logs https://apenwarr.ca/log/20181106
+
 @dataclass
 class BuildDB:
     targets: defaultdict[Target, Stamp] = field(default_factory=lambda: defaultdict(Stamp))
