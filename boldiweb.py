@@ -250,6 +250,7 @@ class Album(BuildSystem):
         self.handlers.append(TargetFolderHandler(self))
         self.handlers.append(TargetImageHandler(self))
         self.handlers.append(FileHandler())
+        self.clean_build_db()
 
     def render(self):
         self.build(self.target_root.path)

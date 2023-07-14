@@ -67,7 +67,7 @@ class Handler:
 
 class FileHandler(Handler):
     def can_handle(self, target: Target) -> bool:
-        return True
+        return not target.startswith("//")
 
     def stamp(self, target: Target) -> Stamp:
         try:
@@ -78,18 +78,21 @@ class FileHandler(Handler):
             return ""
 
 
+DEFAULT_HANDLER = Handler()
+
+
 @dataclass
 class BuildSystem:
     db_path: Path
-    handlers: list[Handler] = field(init=False, default_factory=list)
     db: BuildDB = field(init=False, default_factory=BuildDB)
+    handlers: list[Handler] = field(init=False, default_factory=list)
 
     def get_handler(self, target: Target) -> Handler:
         target = str(target)
         for handler in self.handlers:
             if handler.can_handle(target):
                 return handler
-        return Handler()
+        return DEFAULT_HANDLER
 
     def register_dependency(self, target: Target, dependency: Target):
         target = str(target)
@@ -132,6 +135,16 @@ class BuildSystem:
             if not dep_handler.stamps_match(old_dep_stamp, cur_dep_stamp):
                 self.rebuild(target, level + 1)
                 return
+            
+    def clean_build_db(self):
+        for target in list(self.db.targets):
+            if self.get_handler(target) is DEFAULT_HANDLER:
+                logger.info(f"removing {target=!r} from db.targets")
+                del self.db.targets[target]
+        for target in list(self.db.dependencies):
+            if self.get_handler(target) is DEFAULT_HANDLER:
+                logger.info(f"removing {target=!r} from db.dependencies")
+                del self.db.dependencies[target]
 
     def load_build_db(self):
         self.db.load(self.db_path)
