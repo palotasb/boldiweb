@@ -165,8 +165,26 @@ class TargetFolderHandler(FileHandler):
 
     def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
         target_folder = self.target_folder(target)
+
         target_folder.path.mkdir(parents=True, exist_ok=True)
         register_dependency(str(target_folder.source.path))
+
+        for subfolder in target_folder.subfolders.values():
+            self.album.build(str(subfolder.path))
+            register_dependency(str(subfolder.path))
+
+        for image in target_folder.images.values():
+            self.album.build(str(image.path))
+            register_dependency(str(image.path))
+
+        index_html = target_folder.path / "index.html"
+
+        index_template = self.album.env.get_template("index.html")
+        stream = index_template.stream({"folder": target_folder})
+        with open(index_html, "w") as fp:
+            stream.dump(fp)
+        for template_file in (HERE / "templates").iterdir():
+            register_dependency(str(template_file))
 
 
 @dataclass
@@ -190,8 +208,6 @@ class TargetImageHandler(FileHandler):
 
     def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
         image = self.target_image(target)
-
-        self.album.build(str(image.parent.path))
 
         shutil.copy(image.source.path, image.path)
 
@@ -242,23 +258,8 @@ class Album(Build):
         self.handlers.append(FileHandler())
 
     def render(self):
-        for target_image in self.target_root.iter_all_images():
-            self.build(str(target_image.path))
-
-        self.render_folder(self.target_root)
+        self.build(str(self.target_root.path))
         self.save_build_db()
-
-    def render_folder(self, target_folder: TargetFolder):
-        index_html = target_folder.path / "index.html"
-        target_folder.path.mkdir(parents=True, exist_ok=True)
-
-        index_template = self.env.get_template("index.html")
-        stream = index_template.stream({"folder": target_folder})
-        with open(index_html, "w") as fp:
-            stream.dump(fp)
-
-        for subfolder in target_folder.subfolders.values():
-            self.render_folder(subfolder)
 
 
 def main():
