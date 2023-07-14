@@ -2,9 +2,9 @@ import argparse
 import collections
 import itertools
 import json
+import logging
 import re
 import shutil
-import logging
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
@@ -13,7 +13,7 @@ import jinja2
 from exiftool import ExifToolHelper
 from unidecode import unidecode
 
-from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp
+from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp, Target
 
 # source folder -> image list
 # image list -> exif db
@@ -94,6 +94,7 @@ class SourceFolder:
 @dataclass(eq=True, order=True, frozen=True)
 class TargetImage:
     source: SourceImage
+    parent: "TargetFolder"
     abs_path: Path
     rel_path: Path
 
@@ -105,6 +106,7 @@ class TargetImage:
 @dataclass(eq=True, order=True, frozen=True)
 class TargetFolder:
     source: SourceFolder
+    parent: Optional["TargetFolder"]
     abs_path: Path
     rel_path: Path
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
@@ -114,13 +116,16 @@ class TargetFolder:
         for source_subfolder in self.source.subfolders.values():
             safe_ascii_name = to_safe_ascii(source_subfolder.abs_path.name)
             subfolder = TargetFolder(
-                source_subfolder, self.abs_path / safe_ascii_name, self.rel_path / safe_ascii_name
+                source_subfolder,
+                self,
+                self.abs_path / safe_ascii_name,
+                self.rel_path / safe_ascii_name,
             )
             self.subfolders[safe_ascii_name] = subfolder
         for source_image in self.source.images.values():
             safe_ascii_name = to_safe_ascii(source_image.abs_path.name)
             image = TargetImage(
-                source_image, self.abs_path / safe_ascii_name, self.rel_path / safe_ascii_name
+                source_image, self, self.abs_path / safe_ascii_name, self.rel_path / safe_ascii_name
             )
             self.images[safe_ascii_name] = image
 
@@ -149,11 +154,32 @@ class TargetFolder:
 
 
 @dataclass
+class TargetFolderHandler(FileHandler):
+    album: "Album"
+
+    def maybe_target_folder(self, target: Stamp) -> Optional[TargetFolder]:
+        return self.album.target_root.path_to_folder(Path(target))
+
+    def target_folder(self, target: Stamp) -> TargetFolder:
+        maybe_target_folder = self.maybe_target_folder(target)
+        assert maybe_target_folder
+        return maybe_target_folder
+
+    def can_handle(self, target: Target) -> bool:
+        return self.maybe_target_folder(target) is not None
+
+    def build_impl(self, target: Target, register_dependency: RegisterDependencyCallback):
+        target_folder = self.target_folder(target)
+        target_folder.abs_path.mkdir(parents=True, exist_ok=True)
+        register_dependency(str(target_folder.source.abs_path))
+
+
+@dataclass
 class TargetImageHandler(FileHandler):
-    target_root: TargetFolder
+    album: "Album"
 
     def maybe_target_image(self, target: Stamp) -> Optional[TargetImage]:
-        return self.target_root.path_to_image(Path(target))
+        return self.album.target_root.path_to_image(Path(target))
 
     def target_image(self, target: Stamp) -> TargetImage:
         maybe_target_image = self.maybe_target_image(target)
@@ -170,7 +196,8 @@ class TargetImageHandler(FileHandler):
     def build_impl(self, target: str, register_dependency: RegisterDependencyCallback):
         image = self.target_image(target)
 
-        image.abs_path.parent.mkdir(parents=True, exist_ok=True)
+        self.album.build(str(image.parent.abs_path))
+
         shutil.copy(image.source.abs_path, image.abs_path)
 
         # TODO: create thumbnail images
@@ -192,7 +219,7 @@ class Album(Build):
 
     def __post_init__(self, source_path: Path, target_path: Path):
         self.source_root = SourceFolder(source_path, Path("."))
-        self.target_root = TargetFolder(self.source_root, target_path, Path("."))
+        self.target_root = TargetFolder(self.source_root, None, target_path, Path("."))
 
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
@@ -215,7 +242,8 @@ class Album(Build):
         self.env.filters["to_safe_ascii"] = to_safe_ascii
 
         self.load_build_db()
-        self.handlers.append(TargetImageHandler(self.target_root))
+        self.handlers.append(TargetFolderHandler(self))
+        self.handlers.append(TargetImageHandler(self))
         self.handlers.append(FileHandler())
 
     def render(self):
