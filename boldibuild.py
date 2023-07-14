@@ -13,6 +13,7 @@ RegisterDependencyCallback = Callable[[Target], None]
 
 
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 @dataclass

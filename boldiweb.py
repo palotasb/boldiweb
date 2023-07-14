@@ -23,6 +23,7 @@ from boldibuild import Build, FileHandler, RegisterDependencyCallback, Stamp
 
 
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
