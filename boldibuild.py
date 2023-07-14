@@ -81,16 +81,20 @@ class Build:
     db: BuildDB = field(init=False, default_factory=BuildDB)
 
     def get_handler(self, target: Target) -> Handler:
+        target = str(target)
         for handler in self.handlers:
             if handler.can_handle(target):
                 return handler
         return Handler()
 
     def register_dependency(self, target: Target, dependency: Target):
+        target = str(target)
+        dependency = str(dependency)
         dep_handler = self.get_handler(dependency)
         self.db.dependencies[target][dependency] = dep_handler.stamp(dependency)
 
     def rebuild(self, target: Target, level: int = 0):
+        target = str(target)
         logger.info(f"{' '*2*level}rebuild({target=!r})")
         handler = self.get_handler(target)
         self.db.dependencies.pop(target, None)
@@ -98,6 +102,7 @@ class Build:
         self.db.targets[target] = handler.stamp(target)
 
     def build(self, target: Target, level: int = 0):
+        target = str(target)
         logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
         old_stamp = self.db.targets[target]

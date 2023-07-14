@@ -163,15 +163,15 @@ class TargetFolderHandler(FileHandler):
         target_folder = self.target_folder(target)
 
         target_folder.path.mkdir(parents=True, exist_ok=True)
-        register_dependency(str(target_folder.source.path))
+        register_dependency(target_folder.source.path)
 
         for subfolder in target_folder.subfolders.values():
-            self.album.build(str(subfolder.path))
-            register_dependency(str(subfolder.path))
+            self.album.build(subfolder.path)
+            register_dependency(subfolder.path)
 
         for image in target_folder.images.values():
-            self.album.build(str(image.path))
-            register_dependency(str(image.path))
+            self.album.build(image.path)
+            register_dependency(image.path)
 
         index_html = target_folder.path / "index.html"
 
@@ -180,7 +180,7 @@ class TargetFolderHandler(FileHandler):
         with open(index_html, "w") as fp:
             stream.dump(fp)
         for template_file in (HERE / "templates").iterdir():
-            register_dependency(str(template_file))
+            register_dependency(template_file)
 
 
 @dataclass
@@ -212,7 +212,7 @@ class TargetImageHandler(FileHandler):
         with open(image.exif_json_path, "w") as exif_json_fp:
             json.dump(get_exif_tags(image.source.path), exif_json_fp, indent=2)
 
-        register_dependency(str(image.source.path))
+        register_dependency(image.source.path)
         register_dependency(__file__)
 
 
@@ -254,7 +254,7 @@ class Album(Build):
         self.handlers.append(FileHandler())
 
     def render(self):
-        self.build(str(self.target_root.path))
+        self.build(self.target_root.path)
         self.save_build_db()
 
 
