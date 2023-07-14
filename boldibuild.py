@@ -110,8 +110,8 @@ class Build:
             if dep in self.db.targets:
                 self.build(dep, level + 1)
             dep_handler = self.get_handler(dep)
-            new_dep_stamp = dep_handler.stamp(dep)
-            if not dep_handler.stamps_match(old_dep_stamp, new_dep_stamp):
+            cur_dep_stamp = dep_handler.stamp(dep)
+            if not dep_handler.stamps_match(old_dep_stamp, cur_dep_stamp):
                 self.rebuild(target, level + 1)
                 return
 
