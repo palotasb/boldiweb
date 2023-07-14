@@ -125,16 +125,12 @@ class TargetFolder:
             self.images[safe_ascii_name] = image
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
-        if path.is_absolute() and path.is_relative_to(self.path):
-            path = path.relative_to(self.path)
-        elif path.is_absolute():
-            return None
-
-        if path == Path("."):
+        if path == self.path:
             return self
-        else:
-            subfolder = self.subfolders.get(path.parts[0])
-            return subfolder.path_to_folder(Path(*path.parts[1:])) if subfolder else None
+        elif path.is_relative_to(self.path):
+            for subfolder in self.subfolders.values():
+                if (maybe_subfolder := subfolder.path_to_folder(path)) is not None:
+                    return maybe_subfolder
 
     def path_to_image(self, path: Path) -> Optional[TargetImage]:
         folder = self.path_to_folder(Path(*path.parts[:-1]))
