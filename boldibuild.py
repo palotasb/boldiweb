@@ -1,4 +1,3 @@
-import abc
 import json
 import logging
 from collections import defaultdict
@@ -71,7 +70,7 @@ class FileHandler(Handler):
 
 
 @dataclass
-class Build(abc.ABC):
+class Build:
     db_path: Path
     handlers: list[Handler] = field(init=False, default_factory=list)
     db: BuildDB = field(init=False, default_factory=BuildDB)
