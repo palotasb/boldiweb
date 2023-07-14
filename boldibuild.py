@@ -19,6 +19,7 @@ logger.addHandler(logging.NullHandler())
 # - Parallelize
 # - Serialize build logs https://apenwarr.ca/log/20181106
 
+
 @dataclass
 class BuildDB:
     targets: defaultdict[Target, Stamp] = field(default_factory=lambda: defaultdict(Stamp))

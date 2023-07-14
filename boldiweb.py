@@ -1,7 +1,7 @@
 import argparse
 import collections
-import itertools
 import functools
+import itertools
 import json
 import logging
 import re
@@ -96,7 +96,7 @@ class TargetImage:
     @property
     def exif_json_path(self) -> Path:
         return self.path.with_suffix(".exif.json")
-    
+
     @functools.cached_property
     def exif_data(self) -> dict[str, Any]:
         return json.loads(self.exif_json_path.read_text())
@@ -121,9 +121,7 @@ class TargetFolder:
             self.subfolders[safe_ascii_name] = subfolder
         for source_image in self.source.images.values():
             safe_ascii_name = to_safe_ascii(source_image.path.name)
-            image = TargetImage(
-                source_image, self, self.path / safe_ascii_name
-            )
+            image = TargetImage(source_image, self, self.path / safe_ascii_name)
             self.images[safe_ascii_name] = image
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
