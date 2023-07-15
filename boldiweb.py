@@ -136,13 +136,6 @@ class TargetFolder:
         folder = self.path_to_folder(Path(*path.parts[:-1]))
         return folder.images.get(path.name) if folder else None
 
-    def iter_all_images(self) -> Generator[TargetImage, None, None]:
-        for image in itertools.chain(
-            self.images.values(),
-            *[subfolder.iter_all_images() for subfolder in self.subfolders.values()],
-        ):
-            yield image
-
 
 @dataclass
 class TargetFolderHandler(FileHandler):
