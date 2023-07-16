@@ -21,6 +21,15 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
+  color: black;
+  background-color: white;
+}
+a {
+    color: blue;
+    text-decoration: underline;
+}
+a.subtle {
+    text-decoration: none;
 }
 img, picture, video, canvas, svg {
   display: block;
@@ -36,8 +45,25 @@ p, h1, h2, h3, h4, h5, h6 {
   isolation: isolate;
 }
     </style>
+<script type="text/javascript">
+function toggleFullscreen() {
+  let elem = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().catch((err) => {
+      alert(
+        `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`,
+      );
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+</script>
 </head>
 <body>
+    <a id="top"></a>
     <h1><j2:var>folder.title</j2:var></h1>
     <j2:block> for parent in folder.parents + [folder] </j2:block>
         <a href="<j2:var> parent.path | relative_to(folder.path) </j2:var>/index.html"><j2:var>parent.title</j2:var></a>
@@ -51,14 +77,18 @@ p, h1, h2, h3, h4, h5, h6 {
     </ul>
     
     <article id="images" style="max-width: 100%">
-    <j2:block> for image in folder.images.values() </j2:block>
-        <article class="image">
+    <j2:block> for name, image in folder.images.items() </j2:block>
+        <article class="image" id="<j2:var> name </j2:var>">
             <picture style="display: block;">
                 <img class="thumbnail"
                     src="<j2:var>image.path | relative_to(folder.path)</j2:var>"
                     alt="<j2:var>image.exif.IPTC.Artist</j2:var>" />
             </picture>
-            <h2><j2:var>image.title</j2:var></h2>
+            <h2><a href="#<j2:var> name </j2:var>"><j2:var>image.title</j2:var>
+                <j2:block> if image.title != image.source.path.stem </j2:block>
+                <small>[<j2:var>image.path.stem</j2:var>]</small>
+                <j2:block> endif </j2:block>
+            </a></h2>
             <p class="image-description">
                 <j2:var>image.description or undefined</j2:var>
             </p>
@@ -71,8 +101,12 @@ p, h1, h2, h3, h4, h5, h6 {
                 LV <j2:var>image.light_value | human_round or "?"</j2:var>
             </p>
             <p class="camera-info">
-                <j2:var>image.camera</j2:var> +
+                <j2:var>image.camera</j2:var> <j2:var> "+" if image.camera and image.lens else "" </j2:var>
                 <j2:var>image.lens</j2:var>
+            </p>
+            <p>
+                <a href="#top" class="subtle">⇧ <j2:var> folder.title </j2:var></a> |
+                <a href="javascript:toggleFullscreen()" class="subtle"><span>📺 </span>Full screen</a>
             </p>
         </article>
     <j2:block> endfor </j2:block>
