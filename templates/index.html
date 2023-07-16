@@ -62,10 +62,10 @@ function toggleFullscreen() {
 
 function getFirstVisibleImage() {
     const viewport = window.visualViewport;
-    const candidates = document.querySelectorAll("article.image");
+    const candidates = document.querySelectorAll("header, article.image");
     let elements = [];
     for (const candidate of candidates) {
-        const image = candidate.querySelector("picture");
+        const image = candidate.querySelector("picture") || candidate;
         const rect = image.getBoundingClientRect();
         // Check if the candidate vertically overlaps with the viewport
         if (rect.top <= viewport.offsetTop + viewport.height && viewport.offsetTop <= rect.bottom) {
@@ -95,7 +95,7 @@ document.addEventListener("scroll", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  const currentImage = document.querySelector(`article${window.location.hash}`);
+  const currentImage = document.querySelector(`article.image${window.location.hash}`) || document.querySelector("article.image");
   if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " " && !event.shiftKey) {
     const images = document.querySelectorAll("article.image");
     for (let i = 0; i < images.length; i++) {
@@ -128,12 +128,15 @@ document.addEventListener("keydown", (event) => {
 </script>
 </head>
 <body>
-    <a id="top"></a>
-    <h1><j2:var>folder.title</j2:var></h1>
-    <j2:block> for parent in folder.parents + [folder] </j2:block>
-        <a href="<j2:var> parent.path | relative_to(folder.path) </j2:var>/index.html"><j2:var>parent.title</j2:var></a>
-        <j2:var> "→" if not loop.last else "" </j2:var>
-    <j2:block> endfor </j2:block>
+    <header id="">
+        <h1><j2:var>folder.title</j2:var></h1>
+        <nav>
+        <j2:block> for parent in folder.parents + [folder] </j2:block>
+            <a href="<j2:var> parent.path | relative_to(folder.path) </j2:var>/index.html"><j2:var>parent.title</j2:var></a>
+            <j2:var> "→" if not loop.last else "" </j2:var>
+        <j2:block> endfor </j2:block>
+        </nav>
+    </header>
 
     <ul id="folders">
     <j2:block> for subfolder in folder.subfolders.values() </j2:block>
