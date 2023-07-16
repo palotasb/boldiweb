@@ -27,7 +27,7 @@
     {% endfor %}
     </ul>
     
-    <main id="images" style="max-width: 100%">
+    <main id="images">
     {% for name, image in folder.images.items() %}
         <article class="image" id="{{ image.path.stem }}">
             <picture style="display: block;">
@@ -62,5 +62,12 @@
         </article>
     {% endfor %}
     </main>
+    <a id="bottom"></a>
+    <nav>
+    {% for parent in folder.parents + [folder] %}
+        <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
+        {{ "→" if not loop.last else "" }}
+    {% endfor %}
+    </nav>
 </body>
 </html>

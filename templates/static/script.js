@@ -13,7 +13,7 @@ function toggleFullscreen() {
 }
 
 function getCandidateUrlHashTargets() {
-    return document.querySelectorAll("header, article.image");
+    return document.querySelectorAll("header, article.image, #bottom");
 }
 
 function getFirstVisibleImage() {
