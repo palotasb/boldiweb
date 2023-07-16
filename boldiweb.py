@@ -16,7 +16,7 @@ from exiftool import ExifToolHelper
 from PIL import Image
 from unidecode import unidecode
 
-from boldibuild import Builder, BuildSystem, FileHandler, Stamp, Target
+from boldibuild import Builder, BuildSystem, FileHandler, Handler, Stamp, Target
 
 # source folder -> image list
 # image list -> exif db
@@ -314,15 +314,44 @@ class TargetImageHandler(FileHandler):
 
 
 @dataclass
+class StaticHandler(Handler):
+    album: "Album"
+    files: dict[str, Path] = field(init=False)
+
+    def __post_init__(self):
+        self.files = {
+            f"static/{file.name}": self.album.target_static / file.name
+            for file in sorted((HERE / "templates" / "static").iterdir())
+        }
+
+    def can_handle(self, target: Target) -> bool:
+        return target == "//static"
+
+    def stamp(self, target: Target) -> Stamp:
+        return "; ".join(FileHandler.stamp(self, file) for file in self.files.values())
+
+    def rebuild_impl(self, target: Target, builder: Builder):
+        self.album.target_static.mkdir(parents=True, exist_ok=True)
+        for source, target in self.files.items():
+            builder.add_source(HERE / "templates" / source)
+            template = self.album.env.get_template(source)
+            stream = template.stream()
+            with open(target, "w") as fp:
+                stream.dump(fp)
+
+
+@dataclass
 class Album(BuildSystem):
     title: str
     source_path: InitVar[Path]
     target_path: InitVar[Path]
     target_root: TargetFolder = field(init=False)
+    target_static: Path = field(init=False)
     env: jinja2.Environment = field(init=False)
 
     def __post_init__(self, source_path: Path, target_path: Path):
         self.target_root = TargetFolder(SourceFolder(source_path), None, target_path, self.title)
+        self.target_static = self.target_root.path / "static"
 
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
@@ -342,9 +371,11 @@ class Album(BuildSystem):
         self.load_build_db()
         self.handlers.append(TargetFolderHandler(self))
         self.handlers.append(TargetImageHandler(self))
+        self.handlers.append(StaticHandler(self))
         self.handlers.append(FileHandler())
 
     def render(self):
+        self.build("//static")
         self.build(self.target_root.path)
         self.save_build_db()
 
