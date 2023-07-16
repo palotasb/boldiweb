@@ -2,15 +2,24 @@ function toggleFullscreen() {
     let elem = document.documentElement;
 
     if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch((err) => {
-            alert(
-                `Error attempting to enable fullscreen mode: ${err.message} (${err.name})`,
-            );
-        });
+        elem.requestFullscreen().catch((err) => {}).then();
     } else {
         document.exitFullscreen();
     }
 }
+
+function getCurrentImageOrHeader() {
+    return window.location.hash && document.querySelector(`article.image${window.location.hash}`) || document.querySelector("header");
+}
+
+function scrollCurrentImageIntoView() {
+    const currentImage = getCurrentImageOrHeader();
+    currentImage.scrollIntoView()
+}
+
+document.addEventListener("fullscreenchange", (event) => {
+    scrollCurrentImageIntoView();
+});
 
 function getCandidateUrlHashTargets() {
     return document.querySelectorAll("header, article.image, #bottom");
@@ -62,11 +71,8 @@ document.addEventListener("scrollend", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-    const currentImage = (
-        window.location.hash && document.querySelector(`article.image${window.location.hash}`)
-        || document.querySelector("header")
-    );
     if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " " && !event.shiftKey) {
+        const currentImage = getCurrentImageOrHeader();
         const images = getCandidateUrlHashTargets();
         for (let i = 0; i < images.length; i++) {
             if (images[i] === currentImage) {
@@ -75,11 +81,16 @@ document.addEventListener("keydown", (event) => {
                     nextSibling.scrollIntoView({ behavior: "smooth" });
                 }
                 event.preventDefault();
-                return false;
+                return;
             }
         }
+        // If we get stuck, try to get unstuck
+        window.scrollBy({"top": 10, "behavior": "smooth"});
+        event.preventDefault();
+        return;
     }
     if (event.key === "ArrowUp" || event.key === "ArrowLeft" || event.key === " " && event.shiftKey) {
+        const currentImage = getCurrentImageOrHeader();
         const images = getCandidateUrlHashTargets();
         for (let i = 0; i < images.length; i++) {
             if (images[i] === currentImage) {
@@ -88,8 +99,15 @@ document.addEventListener("keydown", (event) => {
                     prevSibling.scrollIntoView({ behavior: "smooth" });
                 }
                 event.preventDefault();
-                return false;
+                return ;
             }
         }
+        // If we get stuck, try to get unstuck
+        window.scrollBy({"top": -10, "behavior": "smooth"});
+        event.preventDefault();
+        return;
+    }
+    if (event.key === "f" || event.key === "Enter") {
+        toggleFullscreen();
     }
 });
