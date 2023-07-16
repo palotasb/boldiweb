@@ -253,7 +253,7 @@ class TargetFolderHandler(FileHandler):
 
         index_html = target_folder.path / "index.html"
 
-        index_template = self.album.env.get_template("index.html")
+        index_template = self.album.env.get_template("index.html.j2")
         stream = index_template.stream({"folder": target_folder})
         with open(index_html, "w") as fp:
             stream.dump(fp)
@@ -327,12 +327,6 @@ class Album(BuildSystem):
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
             autoescape=True,
-            block_start_string="<j2:block>",
-            block_end_string="</j2:block>",
-            variable_start_string="<j2:var>",
-            variable_end_string="</j2:var>",
-            comment_start_string="<j2:comment>",
-            comment_end_string="</j2:comment>",
             keep_trailing_newline=True,
             trim_blocks=True,
             lstrip_blocks=True,
