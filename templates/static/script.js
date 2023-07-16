@@ -23,7 +23,8 @@ function getFirstVisibleImage() {
         const image = candidate.querySelector("picture") || candidate;
         const rect = image.getBoundingClientRect();
         // Check if the candidate vertically overlaps with the viewport
-        if (rect.top <= viewport.offsetTop + viewport.height && viewport.offsetTop < rect.bottom) {
+        console.log(`${image.id}: rect.top=${rect.top} <= viewport.offsetTop=${viewport.offsetTop} + viewport.height=${viewport.height} && viewport.offsetTop=${viewport.offsetTop} < rect.bottom=${rect.bottom}`)
+        if (rect.top <= viewport.offsetTop + viewport.height && viewport.offsetTop < rect.bottom - rect.height * 0.1875) {
             return candidate;
         }
     }
