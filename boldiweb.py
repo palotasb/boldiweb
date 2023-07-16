@@ -1,17 +1,17 @@
 import argparse
 import collections
 import functools
-import itertools
 import json
 import logging
 import re
 import shutil
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any, Optional
 
 import jinja2
 from exiftool import ExifToolHelper
+from PIL import Image
 from unidecode import unidecode
 
 from boldibuild import Builder, BuildSystem, FileHandler, Stamp, Target
@@ -29,7 +29,7 @@ logger.addHandler(logging.NullHandler())
 
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
-NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-_/]+", re.ASCII)
+NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-\(\)_/]+", re.ASCII)
 RELEVANT_EXIF_TAGS = ("EXIF:all", "IPTC:all")
 
 
@@ -91,38 +91,44 @@ class SourceFolder:
 class TargetImage:
     source: SourceImage
     parent: "TargetFolder"
-    path: Path
+    path: Path = field(init=False)
+    path_3000w: Path = field(init=False)
+    path_1500w: Path = field(init=False)
+    path_800w: Path = field(init=False)
+    exif_path: Path = field(init=False)
 
-    @property
-    def exif_json_path(self) -> Path:
-        return self.path.with_suffix(".exif.json")
+    def __post_init__(self):
+        self.path = self.parent.path / to_safe_ascii(self.source.path.name)
+        self.path_3000w = self.path.with_suffix(f".3000{self.path.suffix}")
+        self.path_1500w = self.path.with_suffix(f".1500{self.path.suffix}")
+        self.path_800w = self.path.with_suffix(f".800{self.path.suffix}")
+        self.exif_path = self.path.with_suffix(f"{self.path.suffix}.exif.json")
 
     @functools.cached_property
     def exif_data(self) -> dict[str, Any]:
-        return json.loads(self.exif_json_path.read_text())
+        return json.loads(self.exif_path.read_text())
+    
+    @property
+    def title(self):
+        return self.exif_data["EXIF"].get("Title") or self.source.path.stem
 
 
 @dataclass
 class TargetFolder:
     source: SourceFolder
     parent: Optional["TargetFolder"]
-    path: Path
+    path: Path = None
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
+        self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
         for source_subfolder in self.source.subfolders.values():
-            safe_ascii_name = to_safe_ascii(source_subfolder.path.name)
-            subfolder = TargetFolder(
-                source_subfolder,
-                self,
-                self.path / safe_ascii_name,
-            )
-            self.subfolders[safe_ascii_name] = subfolder
+            subfolder = TargetFolder(source_subfolder, self)
+            self.subfolders[subfolder.path.name] = subfolder
         for source_image in self.source.images.values():
-            safe_ascii_name = to_safe_ascii(source_image.path.name)
-            image = TargetImage(source_image, self, self.path / safe_ascii_name)
-            self.images[safe_ascii_name] = image
+            image = TargetImage(source_image, self)
+            self.images[image.path.name] = image
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
         if path == self.path:
@@ -191,20 +197,37 @@ class TargetImageHandler(FileHandler):
 
     def stamp(self, target: Stamp) -> Stamp:
         image = self.target_image(target)
-        return f"{super().stamp(image.path)}; {super().stamp(image.exif_json_path)}"
+        return "; ".join(
+            FileHandler.stamp(self, path)
+            for path in [
+                image.path,
+                # image.path_3000w,
+                # image.path_1500w,
+                # image.path_800w,
+                image.exif_path,
+            ]
+        )
 
     def rebuild_impl(self, target: str, builder: Builder):
         image = self.target_image(target)
 
         shutil.copy(image.source.path, image.path)
 
-        # TODO: create thumbnail images
+        # with Image.open(image.path) as pil_image:
+        #     w, h = 3000, round(3000 / pil_image.size[0] * pil_image.size[1])
+        #     with pil_image.resize((w, h)) as resized_image:
+        #         resized_image.save(image.path_3000w)
+        #     w, h = 1500, round(1500 / pil_image.size[0] * pil_image.size[1])
+        #     with pil_image.resize((w, h)) as resized_image:
+        #         resized_image.save(image.path_1500w)
+        #     w, h = 800, round(800 / pil_image.size[0] * pil_image.size[1])
+        #     with pil_image.resize((w, h)) as resized_image:
+        #         resized_image.save(image.path_800w)
 
-        with open(image.exif_json_path, "w") as exif_json_fp:
-            json.dump(get_exif_tags(image.source.path), exif_json_fp, indent=2)
+        with open(image.exif_path, "w") as fp:
+            json.dump(get_exif_tags(image.source.path), fp, indent=2)
 
         builder.add_source(image.source.path)
-        builder.add_source(__file__)
 
 
 @dataclass
