@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 import jinja2
-import more_itertools
 from exiftool import ExifToolHelper
 from PIL import Image
 from unidecode import unidecode
