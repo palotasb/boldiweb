@@ -44,14 +44,19 @@ p, h1, h2, h3, h4, h5, h6 {
     
     <article id="images" style="max-width: 100%">
     <j2:block> for name, image in folder.images.items() </j2:block>
-        <p>
+        <article>
             <picture style="display: block;">
                 <img class="thumbnail"
                     src="<j2:var>image.path | relative_to(folder.path)</j2:var>"
                     alt="<j2:var>image.exif_data.IPTC.Artist</j2:var>" />
             </picture>
-            <h2><j2:var>image.title</j2:var></p></h2>
-        </p>
+            <h2><j2:var>image.title</j2:var></h2>
+            <p class="image-data">
+                <j2:var>image.focal_length</j2:var>mm
+                𝑓/<j2:var>image.exif_data.EXIF.FNumber</j2:var>
+                <j2:var>image.shutter_speed</j2:var>s
+            </p>
+        </article>
     <j2:block> endfor </j2:block>
     </article>
 </body>

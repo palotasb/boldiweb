@@ -3,6 +3,7 @@ import collections
 import functools
 import json
 import logging
+import math
 import re
 import shutil
 from dataclasses import InitVar, dataclass, field
@@ -107,10 +108,56 @@ class TargetImage:
     @functools.cached_property
     def exif_data(self) -> dict[str, Any]:
         return json.loads(self.exif_path.read_text())
-    
+
     @property
-    def title(self):
+    def title(self) -> str:
         return self.exif_data["EXIF"].get("Title") or self.source.path.stem
+
+    @property
+    def crop_factor(self) -> Optional[float]:
+        # ffx, ffy = 36.0, 24.0
+        # ff_size = math.hypot(ffx, ffy)
+        # https://photo.stackexchange.com/a/40870
+        # https://exiftool.org/TagNames/EXIF.html
+        conv = {2: 25.4, 3: 10.0, 4: 1.0, 5: 1 / 1000}
+        fpx_u, fpy_u, fp_r = (
+            self.exif_data["EXIF"].get("FocalPlaneXResolution"),
+            self.exif_data["EXIF"].get("FocalPlaneYResolution"),
+            conv.get(self.exif_data["EXIF"].get("FocalPlaneResolutionUnit")),
+        )
+        px_u, py_u, p_r = (
+            self.exif_data["EXIF"].get("XResolution"),
+            self.exif_data["EXIF"].get("YResolution"),
+            conv.get(self.exif_data["EXIF"].get("ResolutionUnit")),
+        )
+        if any(map(lambda x: x is None, [fpx_u, fpy_u, fp_r, px_u, py_u, p_r])):
+            return None
+
+        fpx, fpy = fpx_u / fp_r, fpy_u / fp_r
+        fpz = math.hypot(fpx, fpy)
+        px, py = px_u / p_r, py_u / p_r
+        pz = math.hypot(px, py)
+        return fpz / pz
+
+    @property
+    def focal_length(self) -> Optional[str]:
+        native_f = self.exif_data["EXIF"].get("FocalLength")
+        if native_f is None:
+            return None
+        else:
+            return f"{native_f}"
+
+    @property
+    def shutter_speed(self) -> Optional[str]:
+        speed_s = float(self.exif_data["EXIF"].get("ShutterSpeedValue", "0.0"))
+        if speed_s >= 10.0:
+            return f"{round(speed_s, None)}"
+        elif speed_s >= 0.5:
+            return f"{round(speed_s, 1)}"
+        elif speed_s > 0.0:
+            return f"1/{round(1/speed_s, None)}"
+        else:
+            return None
 
 
 @dataclass
@@ -178,6 +225,8 @@ class TargetFolderHandler(FileHandler):
             stream.dump(fp)
         for template_file in (HERE / "templates").iterdir():
             builder.add_source(template_file)
+
+        builder.add_source(__file__)
 
 
 @dataclass
