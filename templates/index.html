@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>My Webpage</title>
+    <title><j2:var>folder.title</j2:var>
+        <j2:block> if folder != album.target_root </j2:block>
+            – <j2:var>album.title</j2:var>
+        <j2:block> endif </j2:block>
+    </title>
     <style type="text/css">
 /*
   Josh's Custom CSS Reset
@@ -16,6 +20,7 @@
 body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  font-size: 16px;
 }
 img, picture, video, canvas, svg {
   display: block;
@@ -33,31 +38,41 @@ p, h1, h2, h3, h4, h5, h6 {
     </style>
 </head>
 <body>
-    <h1><j2:var>folder.source.path.name</j2:var> [<j2:var>folder.path | relative_to(root)</j2:var>]</h1>
-    <a href="<j2:var>root | relative_to(folder.path)</j2:var>">Home: <j2:var>root | relative_to(folder.path)</j2:var></a>
+    <h1><j2:var>folder.title</j2:var></h1>
+    <j2:block> for parent in folder.parents + [folder] </j2:block>
+        <a href="<j2:var> parent.path | relative_to(folder.path) </j2:var>/index.html"><j2:var>parent.title</j2:var></a>
+        <j2:var> "→" if not loop.last else "" </j2:var>
+    <j2:block> endfor </j2:block>
 
     <ul id="folders">
-    <j2:block> for name, subfolder in folder.subfolders.items() </j2:block>
-        <li><a href="<j2:var>name</j2:var>"><j2:var>subfolder.source.path.name</j2:var></a></li>
+    <j2:block> for subfolder in folder.subfolders.values() </j2:block>
+        <li><a href="<j2:var>subfolder.path | relative_to(folder.path)</j2:var>/index.html"><j2:var>subfolder.title</j2:var></a></li>
     <j2:block> endfor </j2:block>
     </ul>
     
     <article id="images" style="max-width: 100%">
-    <j2:block> for name, image in folder.images.items() </j2:block>
-        <article>
+    <j2:block> for image in folder.images.values() </j2:block>
+        <article class="image">
             <picture style="display: block;">
                 <img class="thumbnail"
                     src="<j2:var>image.path | relative_to(folder.path)</j2:var>"
                     alt="<j2:var>image.exif.IPTC.Artist</j2:var>" />
             </picture>
             <h2><j2:var>image.title</j2:var></h2>
-            <p class="image-data">
-                f = <j2:var>image.focal_length | human_round</j2:var>mm
-                <small>(<j2:var>image.focal_length_35mm | human_round</j2:var>mm 35mm equiv.)</small>,
-                𝑓/<j2:var>image.aperture | human_round</j2:var>,
-                <j2:var>image.shutter_speed | human_round</j2:var>s,
-                ISO <j2:var>image.iso | human_round</j2:var>,
-                LV <j2:var>image.light_value | human_round</j2:var>
+            <p class="image-description">
+                <j2:var>image.description or undefined</j2:var>
+            </p>
+            <p class="exposure-info">
+                f = <j2:var>image.focal_length | human_round or "?"</j2:var>mm
+                (<j2:var>image.focal_length_35mm | human_round or "?"</j2:var>mm <small>FOV at 35mm equiv.</small>),
+                𝑓/<j2:var>image.aperture | human_round or "?"</j2:var>,
+                <j2:var>image.shutter_speed | human_round or "?"</j2:var>s,
+                ISO <j2:var>image.iso | human_round or "?"</j2:var>,
+                LV <j2:var>image.light_value | human_round or "?"</j2:var>
+            </p>
+            <p class="camera-info">
+                <j2:var>image.camera</j2:var> +
+                <j2:var>image.lens</j2:var>
             </p>
         </article>
     <j2:block> endfor </j2:block>

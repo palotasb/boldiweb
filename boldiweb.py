@@ -32,7 +32,7 @@ logger.addHandler(logging.NullHandler())
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
 NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-\(\)_/]+", re.ASCII)
-RELEVANT_EXIF_TAGS = ("EXIF:all", "IPTC:all", "Composite:all", "File:all")
+RELEVANT_EXIF_TAGS = ("Composite:all", "EXIF:all", "File:all", "IPTC:all")
 
 
 exiftool = ExifToolHelper().__enter__()
@@ -134,12 +134,16 @@ class TargetImage:
 
     @property
     def title(self) -> str:
-        return self.exif["EXIF"].get("Title") or self.source.path.stem
+        return self.exif["IPTC"].get("ObjectName") or self.source.path.stem
+
+    @property
+    def description(self) -> Optional[str]:
+        return self.exif["IPTC"].get("Caption-Abstract") or ""
 
     @property
     def focal_length(self) -> Optional[float]:
         return self.exif["EXIF"].get("FocalLength")
-    
+
     @property
     def focal_length_35mm(self) -> Optional[float]:
         return self.exif["Composite"].get("FocalLength35efl")
@@ -147,18 +151,40 @@ class TargetImage:
     @property
     def aperture(self) -> Optional[float]:
         return self.exif["Composite"].get("Aperture")
-    
+
     @property
     def shutter_speed(self) -> Optional[float]:
         return self.exif["Composite"].get("ShutterSpeed")
-    
+
     @property
     def iso(self) -> Optional[int]:
         return self.exif["EXIF"].get("ISO")
-    
+
     @property
     def light_value(self) -> Optional[int]:
         return self.exif["Composite"].get("LightValue")
+
+    @property
+    def camera(self) -> str:
+        make: str = self.exif["EXIF"].get("Make", "")
+        if make == make.upper():
+            make = make.capitalize()
+
+        model: str = self.exif["EXIF"].get("Model", "")
+        if model.startswith(make):
+            make = ""
+        return f"{make}{' ' if make and model else ''}{model}"
+
+    @property
+    def lens(self) -> str:
+        make: str = self.exif["EXIF"].get("LensMake", "")
+        if make == make.upper():
+            make = make.capitalize()
+
+        model: str = self.exif["EXIF"].get("LensModel", "")
+        if model.startswith(make):
+            make = ""
+        return f"{make}{' ' if make and model else ''}{model}"
 
 
 @dataclass
@@ -166,11 +192,18 @@ class TargetFolder:
     source: SourceFolder
     parent: Optional["TargetFolder"]
     path: Path = None
+    title: str = None
+    parents: list["TargetFolder"] = field(init=False, default_factory=list)
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
+        self.title = self.title or self.source.path.name
+        parent = self.parent
+        while parent:
+            self.parents.insert(0, parent)
+            parent = parent.parent
         for source_subfolder in self.source.subfolders.values():
             subfolder = TargetFolder(source_subfolder, self)
             self.subfolders[subfolder.path.name] = subfolder
@@ -282,13 +315,14 @@ class TargetImageHandler(FileHandler):
 
 @dataclass
 class Album(BuildSystem):
+    title: str
     source_path: InitVar[Path]
     target_path: InitVar[Path]
     target_root: TargetFolder = field(init=False)
     env: jinja2.Environment = field(init=False)
 
     def __post_init__(self, source_path: Path, target_path: Path):
-        self.target_root = TargetFolder(SourceFolder(source_path), None, target_path)
+        self.target_root = TargetFolder(SourceFolder(source_path), None, target_path, self.title)
 
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(HERE / "templates"),
@@ -325,14 +359,16 @@ def main():
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler())
     parser = argparse.ArgumentParser()
+    parser.add_argument("title")
     parser.add_argument("source_path", type=Path)
     parser.add_argument("target_path", type=Path)
     args = parser.parse_args()
+    title: str = args.title
     source_path: Path = args.source_path
     target_path: Path = args.target_path
     source_path = source_path.absolute()
     target_path = target_path.absolute()
-    album = Album(target_path / "build.db.json", source_path, target_path)
+    album = Album(target_path / "build.db.json", title, source_path, target_path)
     album.render()
 
 
