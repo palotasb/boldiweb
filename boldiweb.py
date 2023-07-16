@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import jinja2
+import more_itertools
 from exiftool import ExifToolHelper
 from PIL import Image
 from unidecode import unidecode
@@ -31,7 +32,7 @@ logger.addHandler(logging.NullHandler())
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
 NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-\(\)_/]+", re.ASCII)
-RELEVANT_EXIF_TAGS = ("EXIF:all", "IPTC:all")
+RELEVANT_EXIF_TAGS = ("EXIF:all", "IPTC:all", "Composite:all", "File:all")
 
 
 exiftool = ExifToolHelper().__enter__()
@@ -64,6 +65,28 @@ def relative_to(path: Path, other: Path) -> Path:
 
 def to_safe_ascii(s: str) -> str:
     return NON_URL_SAFE_RE.sub("_", unidecode(s))
+
+
+def human_round(f: float) -> str:
+    if not isinstance(f, (int, float)):
+        return f
+
+    if 100 < f:
+        return f"{round(round(f, 1 - math.floor(math.log10(f))))}"
+    elif 20 < f:
+        f = round(f, 0)
+        i = round(f)
+        return f"{i}" if i == f else f"{f}"
+    elif 0.5 <= f:
+        f = round(f, 1)
+        i = round(f)
+        return f"{i}" if i == f else f"{f}"
+    elif 0 < f:
+        return f"1/{human_round(1/f)}"
+    elif f == 0.0:
+        return "0"
+    else:
+        return f"-{human_round(-f)}"
 
 
 @dataclass
@@ -106,32 +129,36 @@ class TargetImage:
         self.exif_path = self.path.with_suffix(f"{self.path.suffix}.exif.json")
 
     @functools.cached_property
-    def exif_data(self) -> dict[str, Any]:
+    def exif(self) -> dict[str, Any]:
         return json.loads(self.exif_path.read_text())
 
     @property
     def title(self) -> str:
-        return self.exif_data["EXIF"].get("Title") or self.source.path.stem
+        return self.exif["EXIF"].get("Title") or self.source.path.stem
 
     @property
-    def focal_length(self) -> Optional[str]:
-        native_f = self.exif_data["EXIF"].get("FocalLength")
-        if native_f is None:
-            return None
-        else:
-            return f"{native_f}"
+    def focal_length(self) -> Optional[float]:
+        return self.exif["EXIF"].get("FocalLength")
+    
+    @property
+    def focal_length_35mm(self) -> Optional[float]:
+        return self.exif["Composite"].get("FocalLength35efl")
 
     @property
-    def shutter_speed(self) -> Optional[str]:
-        speed_s = float(self.exif_data["EXIF"].get("ShutterSpeedValue", "0.0"))
-        if speed_s >= 10.0:
-            return f"{round(speed_s, None)}"
-        elif speed_s >= 0.5:
-            return f"{round(speed_s, 1)}"
-        elif speed_s > 0.0:
-            return f"1/{round(1/speed_s, None)}"
-        else:
-            return None
+    def aperture(self) -> Optional[float]:
+        return self.exif["Composite"].get("Aperture")
+    
+    @property
+    def shutter_speed(self) -> Optional[float]:
+        return self.exif["Composite"].get("ShutterSpeed")
+    
+    @property
+    def iso(self) -> Optional[int]:
+        return self.exif["EXIF"].get("ISO")
+    
+    @property
+    def light_value(self) -> Optional[int]:
+        return self.exif["Composite"].get("LightValue")
 
 
 @dataclass
@@ -282,6 +309,7 @@ class Album(BuildSystem):
         }
         self.env.filters["relative_to"] = relative_to
         self.env.filters["to_safe_ascii"] = to_safe_ascii
+        self.env.filters["human_round"] = human_round
 
         self.load_build_db()
         self.handlers.append(TargetFolderHandler(self))
