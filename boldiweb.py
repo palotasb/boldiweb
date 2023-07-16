@@ -114,32 +114,6 @@ class TargetImage:
         return self.exif_data["EXIF"].get("Title") or self.source.path.stem
 
     @property
-    def crop_factor(self) -> Optional[float]:
-        # ffx, ffy = 36.0, 24.0
-        # ff_size = math.hypot(ffx, ffy)
-        # https://photo.stackexchange.com/a/40870
-        # https://exiftool.org/TagNames/EXIF.html
-        conv = {2: 25.4, 3: 10.0, 4: 1.0, 5: 1 / 1000}
-        fpx_u, fpy_u, fp_r = (
-            self.exif_data["EXIF"].get("FocalPlaneXResolution"),
-            self.exif_data["EXIF"].get("FocalPlaneYResolution"),
-            conv.get(self.exif_data["EXIF"].get("FocalPlaneResolutionUnit")),
-        )
-        px_u, py_u, p_r = (
-            self.exif_data["EXIF"].get("XResolution"),
-            self.exif_data["EXIF"].get("YResolution"),
-            conv.get(self.exif_data["EXIF"].get("ResolutionUnit")),
-        )
-        if any(map(lambda x: x is None, [fpx_u, fpy_u, fp_r, px_u, py_u, p_r])):
-            return None
-
-        fpx, fpy = fpx_u / fp_r, fpy_u / fp_r
-        fpz = math.hypot(fpx, fpy)
-        px, py = px_u / p_r, py_u / p_r
-        pz = math.hypot(px, py)
-        return fpz / pz
-
-    @property
     def focal_length(self) -> Optional[str]:
         native_f = self.exif_data["EXIF"].get("FocalLength")
         if native_f is None:
