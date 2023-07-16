@@ -31,7 +31,7 @@
     {% for name, image in folder.images.items() %}
         <article class="image" id="{{ image.path.stem }}">
             <picture style="display: block;">
-                <img class="thumbnail"
+                <img class="image"
                     src="{{image.path | relative_to(folder.path)}}"
                     alt="{{image.exif.IPTC.Artist}}" />
             </picture>
