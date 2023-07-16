@@ -2,6 +2,7 @@ import argparse
 import collections
 import functools
 import json
+import itertools
 import logging
 import math
 import re
@@ -31,7 +32,7 @@ logger.addHandler(logging.NullHandler())
 IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
 NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-\(\)_/]+", re.ASCII)
-RELEVANT_EXIF_TAGS = ("Composite:all", "EXIF:all", "File:all", "IPTC:all")
+RELEVANT_EXIF_TAGS = ("Composite:all", "EXIF:all", "File:all", "IPTC:all", "XMP:all")
 
 
 exiftool = ExifToolHelper().__enter__()
@@ -138,6 +139,10 @@ class TargetImage:
     @property
     def description(self) -> Optional[str]:
         return self.exif["IPTC"].get("Caption-Abstract") or ""
+    
+    @property
+    def rating(self) -> int:
+        return self.exif["XMP"].get("Rating", 0)
 
     @property
     def focal_length(self) -> Optional[float]:
@@ -195,6 +200,7 @@ class TargetFolder:
     parents: list["TargetFolder"] = field(init=False, default_factory=list)
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
+    cover_image: Optional[TargetImage] = None
 
     def __post_init__(self):
         self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
@@ -249,6 +255,9 @@ class TargetFolderHandler(FileHandler):
 
         for image in target_folder.images.values():
             builder.build(image.path)
+
+        candidate_album_images = itertools.chain(target_folder.images.values(), [subfolder.cover_image for subfolder in target_folder.subfolders.values() if subfolder.cover_image])
+        target_folder.cover_image = max(candidate_album_images, default=None, key=lambda i: i.rating)
 
         index_html = target_folder.path / "index.html"
 

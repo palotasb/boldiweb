@@ -21,13 +21,23 @@
         </nav>
     </header>
 
-    <ul id="folders">
-    {% for subfolder in folder.subfolders.values() %}
-        <li><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></li>
-    {% endfor %}
-    </ul>
+    <main>
     
-    <main id="images">
+    <section id="subfolders">
+    {% for subfolder in folder.subfolders.values() %}
+      <article class="subfolder">
+        <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a>
+        <br>
+        {% if subfolder.cover_image %}
+        <img
+          style="max-width: 20ch"
+          src="{{ subfolder.cover_image.path | relative_to(folder.path) }}" alt="{{ subfolder.title }}" />
+        {% endif %}
+      </article>
+    {% endfor %}
+    </section>
+    
+    <section id="images">
     {% for name, image in folder.images.items() %}
         <article class="image" id="{{ image.path.stem }}">
             <picture style="display: block;">
@@ -61,7 +71,9 @@
             </p>
         </article>
     {% endfor %}
+    </section>
     </main>
+  
     <a id="bottom"></a>
     <nav>
     {% for parent in folder.parents + [folder] %}
