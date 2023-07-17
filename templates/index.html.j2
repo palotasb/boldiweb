@@ -25,22 +25,11 @@
     
     <section id="subfolders">
     {% for subfolder in folder.subfolders.values() %}
-    %%  if subfolder.cover_image
-    %%    set image = subfolder.cover_image
-    %%    set has_image_size = true if image.width and image.height else false
-    %%  else
-    %%    set image = undefined
-    %%    set has_image_size = false
-    %%  endif
-    %%  if has_image_size
-    %%    set width = image.width
-    %%    set height = image.height
-    %%  else
-    %%    set width = 400
-    %%    set height = 300
-    %%  endif
-    %%  set aspect_ratio = width/height
-      <article class="subfolder" style="flex-grow: {{ aspect_ratio }}; flex-shrink: 0;">
+      %% set image = subfolder.cover_image
+      %% set width = image.width
+      %% set height = image.height
+      %% set aspect_ratio = width / height
+      <article class="subfolder" style="flex-grow: {{ aspect_ratio**2 }}; flex-shrink: 0;">
         <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>
         {% if image %}
         <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">
