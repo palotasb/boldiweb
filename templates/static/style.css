@@ -21,8 +21,8 @@ body {
     padding: 2ex;
 }
 
-main {
-    max-width: 100ch;
+p {
+    max-width: 60em;
 }
 
 a {
@@ -40,6 +40,22 @@ video,
 canvas,
 svg {
     display: block;
+}
+
+#subfolders {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ch;
+}
+
+#subfolders > article {
+    max-width: 60ch;
+}
+
+#subfolders > article img {
+    background-color: inherit;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 article.image picture img {

@@ -26,12 +26,17 @@
     <section id="subfolders">
     {% for subfolder in folder.subfolders.values() %}
       <article class="subfolder">
-        <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a>
-        <br>
+        <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>
         {% if subfolder.cover_image %}
-        <img
-          style="max-width: 20ch"
-          src="{{ subfolder.cover_image.path | relative_to(folder.path) }}" alt="{{ subfolder.title }}" />
+        {% set image = subfolder.cover_image %}
+        <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">
+          <img
+            style="{%
+              if image.width and image.height
+            %}aspect-ratio: {{ image.width }}/{{ image.height }};{% endif %}"
+            src="{{ image.path | relative_to(folder.path) }}" alt="{{ subfolder.title }}"
+          />
+        </a>
         {% endif %}
       </article>
     {% endfor %}

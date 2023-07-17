@@ -1,8 +1,8 @@
 import argparse
 import collections
 import functools
-import json
 import itertools
+import json
 import logging
 import math
 import re
@@ -139,7 +139,15 @@ class TargetImage:
     @property
     def description(self) -> Optional[str]:
         return self.exif["IPTC"].get("Caption-Abstract") or ""
-    
+
+    @property
+    def width(self) -> Optional[int]:
+        return self.exif["File"].get("ImageWidth")
+
+    @property
+    def height(self) -> Optional[int]:
+        return self.exif["File"].get("ImageHeight")
+
     @property
     def rating(self) -> int:
         return self.exif["XMP"].get("Rating", 0)
@@ -256,8 +264,17 @@ class TargetFolderHandler(FileHandler):
         for image in target_folder.images.values():
             builder.build(image.path)
 
-        candidate_album_images = itertools.chain(target_folder.images.values(), [subfolder.cover_image for subfolder in target_folder.subfolders.values() if subfolder.cover_image])
-        target_folder.cover_image = max(candidate_album_images, default=None, key=lambda i: i.rating)
+        candidate_album_images = itertools.chain(
+            target_folder.images.values(),
+            [
+                subfolder.cover_image
+                for subfolder in target_folder.subfolders.values()
+                if subfolder.cover_image
+            ],
+        )
+        target_folder.cover_image = max(
+            candidate_album_images, default=None, key=lambda i: i.rating
+        )
 
         index_html = target_folder.path / "index.html"
 
