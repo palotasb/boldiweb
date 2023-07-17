@@ -208,7 +208,8 @@ class TargetFolder:
     parents: list["TargetFolder"] = field(init=False, default_factory=list)
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
-    cover_image: Optional[TargetImage] = None
+    total_image_count: int = field(init=False)
+    cover_image: TargetImage = None  # field(init=False)
 
     def __post_init__(self):
         self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
@@ -219,10 +220,13 @@ class TargetFolder:
             parent = parent.parent
         for source_subfolder in self.source.subfolders.values():
             subfolder = TargetFolder(source_subfolder, self)
-            self.subfolders[subfolder.path.name] = subfolder
+            if subfolder.total_image_count != 0:
+                self.subfolders[subfolder.path.name] = subfolder
         for source_image in self.source.images.values():
             image = TargetImage(source_image, self)
             self.images[image.path.name] = image
+        subfolders_image_count = sum(s.total_image_count for s in self.subfolders.values())
+        self.total_image_count = len(self.images) + subfolders_image_count
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
         if path == self.path:
@@ -272,9 +276,7 @@ class TargetFolderHandler(FileHandler):
                 if subfolder.cover_image
             ],
         )
-        target_folder.cover_image = max(
-            candidate_album_images, default=None, key=lambda i: i.rating
-        )
+        target_folder.cover_image = max(candidate_album_images, key=lambda i: i.rating)
 
         index_html = target_folder.path / "index.html"
 
