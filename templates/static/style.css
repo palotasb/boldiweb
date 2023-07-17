@@ -21,6 +21,10 @@ body {
     padding: 2ex;
 }
 
+main {
+    margin: 4em 0;
+}
+
 p {
     max-width: 60em;
 }
@@ -44,12 +48,31 @@ svg {
 
 #subfolders {
     display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1ch;
 }
 
 #subfolders > article {
-    max-width: 60ch;
+    position: relative;
+    width: 300px;
+    min-width: 200px;
+    flex-basis: auto;
+}
+
+#subfolders > article h2 {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    margin: 0.5em;
+}
+
+#subfolders > article h2 a {
+    display: block;
+    color: white;
+    text-shadow: 0 0 5px black, 1px 0px 1px black, 0px 1px 1px black, -1px 0px 1px black, 0px -1px 1px black;
+    text-decoration: none;
 }
 
 #subfolders > article img {

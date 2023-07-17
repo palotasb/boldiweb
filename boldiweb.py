@@ -382,6 +382,8 @@ class Album(BuildSystem):
             loader=jinja2.FileSystemLoader(HERE / "templates"),
             autoescape=True,
             keep_trailing_newline=True,
+            line_statement_prefix="%%",
+            line_comment_prefix="%#",
             trim_blocks=True,
             lstrip_blocks=True,
         )
