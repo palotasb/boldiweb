@@ -15,6 +15,8 @@
 body {
     line-height: calc(1em + 0.75rem);
     -webkit-font-smoothing: antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif; 
+    /* font-family: Helvetica Neue, Helvetica, Arial, sans-serif;  */
     font-size: 16px;
     color: black;
     background-color: white;
@@ -63,12 +65,17 @@ svg {
     position: absolute;
     left: 0;
     bottom: 0;
-    margin: 0.25em;
+    margin: 0;
+    width: 100%;
+    font-size: 1.125rem;
+    font-weight: normal;
+    text-wrap: balance;
 }
 
 #subfolders > article h2 a {
     display: block;
-    padding: 0.25em;
+    width: 100%;
+    padding: 0.25em .5em;
     color: white;
     background-color: #000000a0;
     text-shadow: 0 0 5px black, 1px 0px 1px black, 0px 1px 1px black, -1px 0px 1px black, 0px -1px 1px black;
