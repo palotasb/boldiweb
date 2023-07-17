@@ -13,7 +13,7 @@
 }
 
 body {
-    line-height: 1.5;
+    line-height: calc(1em + 0.75rem);
     -webkit-font-smoothing: antialiased;
     font-size: 16px;
     color: black;
@@ -50,35 +50,35 @@ svg {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: start;
     gap: 1ch;
 }
 
 #subfolders > article {
     position: relative;
-    width: 300px;
-    min-width: 200px;
-    flex-basis: auto;
+    height: 220px
 }
 
 #subfolders > article h2 {
     position: absolute;
     left: 0;
     bottom: 0;
-    margin: 0.5em;
+    margin: 0.25em;
 }
 
 #subfolders > article h2 a {
     display: block;
+    padding: 0.25em;
     color: white;
+    background-color: #000000a0;
     text-shadow: 0 0 5px black, 1px 0px 1px black, 0px 1px 1px black, -1px 0px 1px black, 0px -1px 1px black;
     text-decoration: none;
 }
 
 #subfolders > article img {
-    background-color: inherit;
-    max-width: 100%;
-    max-height: 100%;
+    object-fit: contain;
+    object-position: bottom left;
+    height: 100%;
 }
 
 article.image picture img {

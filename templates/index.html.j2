@@ -29,14 +29,12 @@
       %% set width = image.width
       %% set height = image.height
       %% set aspect_ratio = width / height
-      <article class="subfolder" style="flex-grow: {{ aspect_ratio**2 }}; flex-shrink: 0;">
+      <article class="subfolder" style="aspect-ratio: {{ aspect_ratio }};">
         <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>
         {% if image %}
         <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">
           <img
             style="aspect-ratio: {{ aspect_ratio }};"
-            width="{{ 300 * aspect_ratio }}"
-            %# height="{{ 300 }}"
             src="{{ image.path | relative_to(folder.path) }}" alt="{{ subfolder.title }}"
           />
         </a>
