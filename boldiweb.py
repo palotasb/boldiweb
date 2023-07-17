@@ -323,21 +323,25 @@ class TargetImageHandler(FileHandler):
 
         shutil.copy(image.source.path, image.path)
 
-        # with Image.open(image.path) as pil_image:
-        #     w, h = 3000, round(3000 / pil_image.size[0] * pil_image.size[1])
-        #     with pil_image.resize((w, h)) as resized_image:
-        #         resized_image.save(image.path_3000w)
-        #     w, h = 1500, round(1500 / pil_image.size[0] * pil_image.size[1])
-        #     with pil_image.resize((w, h)) as resized_image:
-        #         resized_image.save(image.path_1500w)
-        #     w, h = 800, round(800 / pil_image.size[0] * pil_image.size[1])
-        #     with pil_image.resize((w, h)) as resized_image:
-        #         resized_image.save(image.path_800w)
+        with Image.open(image.path) as pil_image:
+            w, h = 3000, round(3000 / pil_image.size[0] * pil_image.size[1])
+            with pil_image.resize((w, h)) as resized_image:
+                resized_image.save(image.path_3000w)
+            w, h = 1500, round(1500 / pil_image.size[0] * pil_image.size[1])
+            with pil_image.resize((w, h)) as resized_image:
+                resized_image.save(image.path_1500w)
+            w, h = 800, round(800 / pil_image.size[0] * pil_image.size[1])
+            with pil_image.resize((w, h)) as resized_image:
+                resized_image.save(image.path_800w)
 
         with open(image.exif_path, "w") as fp:
             json.dump(get_exif_tags(image.source.path), fp, indent=2)
 
         builder.add_source(image.source.path)
+        builder.add_source(image.path_3000w)
+        builder.add_source(image.path_1500w)
+        builder.add_source(image.path_800w)
+        builder.add_source(image.exif_path)
 
 
 @dataclass
