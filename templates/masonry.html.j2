@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Masonry test</title>
+
+{% set SIZE = 150 %}
+
+<style type="text/css">*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+body {
+    color: black;
+    background-color: white;
+}
+.container {
+    display: flex;
+
+    margin: 1em;
+    border: 1px solid gray;
+    background-color: lavender;
+    padding: 1em;
+
+    flex-flow: row wrap;
+    align-items: flex-start;
+    justify-content: start;
+    gap: 0.5em;
+}
+.container > div {
+    border: 1px solid gray;
+    background-color: thistle;
+    padding: 0.5em;
+
+    flex-basis: auto;
+}
+</style>
+</head>
+<body>
+<div class="container">
+{% for i in range(1, 101) %}
+{% set width = ([700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500] | random) %}
+{% set height = ([700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500] | random) %}
+{% set aspect = width / height %}
+<div style="
+    height: {{SIZE}}px;
+    aspect-ratio: {{aspect}};
+    ">Item {{ i }}</div>
+{% endfor %}
+</div>
+</body>
+</html>
