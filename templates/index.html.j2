@@ -11,7 +11,7 @@
     <script type="text/javascript" src="{{ (album.target_static / 'script.js') | relative_to(folder.path) }}"></script>
 </head>
 <body>
-    <header id="">
+    <header>
         <h1>{{folder.title}}</h1>
         <nav>
         {% for parent in folder.parents + [folder] %}

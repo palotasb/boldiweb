@@ -20,7 +20,11 @@ body {
     font-size: 16px;
     color: black;
     background-color: white;
-    padding: 2ex;
+    padding: 0 2ex;
+}
+
+header {
+    padding: 2ex 0;
 }
 
 main {
