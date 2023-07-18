@@ -34,7 +34,7 @@ body {
 }
 .container .outer {
     background-color: thistle;
-
+    flex-shrink: 0;
     flex-basis: auto;
 }
 .container .inner {
@@ -57,17 +57,15 @@ Target area = {{TARGET_AREA}} <br>
 {% set width = ([150, 180, 200, 210, 220, 240, 280] | random) %}
 {% set height = ([150, 180, 200, 210, 220, 240, 280] | random) %}
 {% set area = width * height %}
-{% set aspect = width / height %}
+{% set aspect = (width / height) | round(2) %}
 <div class="outer" style="
     min-height: {{TARGET_SIZE}}px;
     max-height: {{TARGET_SIZE*1.5}}px;
     aspect-ratio: {{aspect}};
     flex-grow: {{aspect}};
-    flex-shrink: 0;
     ">
     <div class="inner" style="
         aspect-ratio: {{aspect}};
-        height: 100%;
         max-height: {{TARGET_SIZE*1.5}}px;
         ">
         Item {{ i }}: <br>

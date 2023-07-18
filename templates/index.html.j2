@@ -24,22 +24,35 @@
     <main>
     
     <section id="subfolders">
+    {% set TARGET_SIZE = 150 %}
     {% for subfolder in folder.subfolders.values() %}
-      %% set image = subfolder.cover_image
-      %% set width = image.width
-      %% set height = image.height
-      %% set aspect_ratio = width / height
-      <article class="subfolder" style="aspect-ratio: {{ aspect_ratio }};">
-        <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>
-        {% if image %}
-        <a href="{{subfolder.path | relative_to(folder.path)}}/index.html">
-          <img
-            style="aspect-ratio: {{ aspect_ratio }};"
-            src="{{ image.path | relative_to(folder.path) }}" alt="{{ subfolder.title }}"
-          />
-        </a>
-        {% endif %}
-      </article>
+        %% set image = subfolder.cover_image
+        %% set width = image.width
+        %% set height = image.height
+        %% set aspect = width / height
+        <article
+            class="subfolder"
+            style="
+                min-height: {{TARGET_SIZE}}px;
+                max-height: {{TARGET_SIZE*1.5}}px;
+                aspect-ratio: {{aspect}};
+                flex-grow: {{aspect}};
+            ">
+            <div
+                class="subfolder-inner"
+                style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.5}}px;"
+                >
+                <a class="thumbnail-container" href="{{subfolder.path | relative_to(folder.path)}}/index.html">
+                    <img
+                        class="thumbnail"
+                        style="aspect-ratio: {{aspect}};"
+                        alt="{{ subfolder.title }}"
+                        src="{{ image.path | relative_to(folder.path) }}"
+                    />
+                </a>
+                <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>                
+            </div>
+        </article>
     {% endfor %}
     </section>
     

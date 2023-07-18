@@ -54,18 +54,39 @@ svg {
 
 #subfolders {
     display: flex;
-    flex-wrap: wrap;
+    flex-flow: row wrap;
     align-items: flex-start;
-    justify-content: start;
-    gap: 1ch;
+    justify-content: space-between;
+    gap: 0.5em;
 }
 
-#subfolders > article {
+#subfolders > article.subfolder {
+    flex-basis: auto;
+    flex-shrink: 0;
+}
+
+#subfolders > article.subfolder:last-child {
+    margin-right: auto;
+}
+
+#subfolders > article.subfolder > div.subfolder-inner {
     position: relative;
-    height: 220px
+    overflow: hidden;
 }
 
-#subfolders > article h2 {
+#subfolders > article.subfolder > div.subfolder-inner > a.thumbnail-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#subfolders > article.subfolder > div.subfolder-inner > a.thumbnail-container > img {
+    object-fit: contain;
+    object-position: bottom left;
+    height: 100%;
+}
+
+#subfolders > article.subfolder > div.subfolder-inner > h2 {
     position: absolute;
     left: 0;
     bottom: 0;
@@ -73,10 +94,9 @@ svg {
     width: 100%;
     font-size: 1.125rem;
     font-weight: normal;
-    text-wrap: balance;
 }
 
-#subfolders > article h2 a {
+#subfolders > article.subfolder > div.subfolder-inner > h2 > a {
     display: block;
     width: 100%;
     padding: 0.25em .5em;
@@ -84,12 +104,6 @@ svg {
     background-color: #000000a0;
     text-shadow: 0 0 5px black, 1px 0px 1px black, 0px 1px 1px black, -1px 0px 1px black, 0px -1px 1px black;
     text-decoration: none;
-}
-
-#subfolders > article img {
-    object-fit: contain;
-    object-position: bottom left;
-    height: 100%;
 }
 
 article.image picture img {
