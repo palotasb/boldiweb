@@ -47,7 +47,7 @@
                         class="thumbnail"
                         style="aspect-ratio: {{aspect}};"
                         alt="{{ subfolder.title }}"
-                        src="{{ image.path | relative_to(folder.path) }}"
+                        src="{{ image.path_800w | relative_to(folder.path) }}"
                     />
                 </a>
                 <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>                
