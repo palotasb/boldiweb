@@ -83,8 +83,6 @@ function scrollToNextUrlHashTarget(next) {
             if (nextSibling) {
                 nextSibling.scrollIntoView({ behavior: "smooth" });
                 return;
-            } else {
-                console.log("Cannot find next sibling", candidates[i]);
             }
         }
     }
