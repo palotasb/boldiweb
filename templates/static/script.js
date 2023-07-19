@@ -1,4 +1,5 @@
 function toggleFullscreen() {
+    overrideUrlHashTarget = getCurrentUrlHashTarget();
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch((err) => {}).then();
     } else {
@@ -45,14 +46,19 @@ function getTargetUrlFirFirstVisibleUrlHashTarget() {
     return id && `#${id}` || window.location.origin + window.location.pathname + window.location.search;
 }
 
+overrideUrlHashTarget = null;
 function scrollCurrentUrlHashTargetIntoView() {
-    const currentUrlHashTarget = getCurrentUrlHashTarget();
+    const currentUrlHashTarget = overrideUrlHashTarget || getCurrentUrlHashTarget();
+    overrideUrlHashTarget = null;
     currentUrlHashTarget.scrollIntoView()
 }
 
 function setUrlHashToFirstVisibleUrlHashTargetNow() {
     const targetUrl = getTargetUrlFirFirstVisibleUrlHashTarget();
     window.history.replaceState(null, null, targetUrl);
+    if (getCurrentUrlHashTarget() === scrollingTo) {
+        scrollingTo = null;
+    }
 }
 
 let _scrollEventThrottleTimeout = null;
@@ -72,10 +78,9 @@ document.addEventListener("scroll", (event) => {
     setUrlHashToFirstVisibleUrlHashTargetThrottled();
 });
 
-scrolling = 1;
 document.addEventListener("scrollend", (event) => {
     setUrlHashToFirstVisibleUrlHashTargetNow();
-    scrolling = 1;
+    scrollingTo = null;
 });
 
 document.addEventListener("fullscreenchange", (event) => {
@@ -86,14 +91,15 @@ document.addEventListener("onload", (event) => {
     scrollCurrentUrlHashTargetIntoView();
 });
 
+scrollingTo = null;
 function scrollToNextUrlHashTarget(next) {
-    const currentUrlHashTarget = getCurrentUrlHashTarget();
+    const currentUrlHashTarget = scrollingTo || getCurrentUrlHashTarget();
     const candidates = getCandidateUrlHashTargets();
     for (let i = 0; i < candidates.length; i++) {
         if (candidates[i] === currentUrlHashTarget) {
-            const newTarget = candidates[Math.max(0, Math.min(i + next * scrolling, candidates.length - 1))];
+            const newTarget = candidates[i + next];
             if (newTarget) {
-                scrolling = scrolling + 1;
+                scrollingTo = newTarget;
                 newTarget.scrollIntoView({ behavior: "smooth" });
                 return;
             }
