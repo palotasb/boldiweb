@@ -98,13 +98,13 @@ function scrollToNextUrlHashTarget(next) {
             const newTarget = candidates[i + next];
             if (newTarget) {
                 scrollingTo = newTarget;
-                newTarget.scrollIntoView({ behavior: "smooth" });
+                newTarget.scrollIntoView();
                 return;
             }
         }
     }
     // If we get stuck, try to get unstuck
-    window.scrollBy({"top": 10 * next, "behavior": "smooth"});
+    window.scrollBy({"top": 10 * next});
 }
 
 document.addEventListener("keydown", (event) => {
@@ -122,12 +122,12 @@ document.addEventListener("keydown", (event) => {
         || event.key === "k"
         || (event.key === " " && event.shiftKey)) {
         scrollToNextUrlHashTarget(-1);
-    } else if (event.key === "h") {
-        document.querySelector("header").scrollIntoView({ behavior: "smooth" });
+    } else if (event.key === "h" || event.key === "e") {
+        document.querySelector("header").scrollIntoView();
     } else if (event.key === "l") {
-        document.querySelector("footer").scrollIntoView({ behavior: "smooth" });
+        document.querySelector("footer").scrollIntoView();
     } else if (event.key === "g") {
-        document.querySelector("#thumbnails, #subfolders").scrollIntoView({ behavior: "smooth" });
+        document.querySelector("#thumbnails, #subfolders").scrollIntoView();
     } else if (event.key === "f" || event.key === "Enter") {
         toggleFullscreen();
     } else {
