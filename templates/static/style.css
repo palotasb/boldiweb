@@ -80,13 +80,13 @@ svg {
     overflow: hidden;
 }
 
-#subfolders a.thumbnail-container {
+.flex-masonry .thumbnail-container {
     position: absolute;
     width: 100%;
     height: 100%;
 }
 
-#subfolders img {
+.thumbnail-container img {
     height: 100%;
 }
 

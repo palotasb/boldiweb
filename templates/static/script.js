@@ -12,7 +12,7 @@ function defaultHashTarget() {
 }
 
 function getCandidateUrlHashTargets() {
-    return document.querySelectorAll("header, #subfolders, article.image, footer");
+    return document.querySelectorAll("header, #subfolders, #thumbnails, article.image, footer");
 }
 
 function getCurrentUrlHashTarget() {
@@ -110,14 +110,31 @@ function scrollToNextUrlHashTarget(next) {
 }
 
 document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "ArrowRight" || event.key === " " && !event.shiftKey) {
+    if (
+        event.key === "ArrowDown"
+        || event.key === "PageDown"
+        || event.key === "ArrowRight" 
+        || event.key === "j"
+        || (event.key === " " && !event.shiftKey)) {
         scrollToNextUrlHashTarget(+1);
-        event.preventDefault();
-    } else if (event.key === "ArrowUp" || event.key === "PageUp" || event.key === "ArrowLeft" || event.key === " " && event.shiftKey) {
+    } else if (
+        event.key === "ArrowUp"
+        || event.key === "PageUp"
+        || event.key === "ArrowLeft"
+        || event.key === "k"
+        || (event.key === " " && event.shiftKey)) {
         scrollToNextUrlHashTarget(-1);
-        event.preventDefault();
+    } else if (event.key === "h") {
+        document.querySelector("header").scrollIntoView({ behavior: "smooth" });
+    } else if (event.key === "l") {
+        document.querySelector("footer").scrollIntoView({ behavior: "smooth" });
+    } else if (event.key === "g") {
+        document.querySelector("#thumbnails, #subfolders").scrollIntoView({ behavior: "smooth" });
     } else if (event.key === "f" || event.key === "Enter") {
         toggleFullscreen();
-        event.preventDefault();
+    } else {
+        // DON'T event.preventDefault() if event isn't handled 
+        return;
     }
+    event.preventDefault();
 });

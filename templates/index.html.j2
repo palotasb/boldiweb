@@ -59,15 +59,40 @@
         </section>
         {% endif %}
 
-        <!--
         {% if folder.images | length %}
-        <section id="thumbnails">
+        <section id="thumbnails" class="flex-masonry">
         {% endif %}
-
+        {% set TARGET_SIZE = 150 %}
+        {% for name, image in folder.images.items() %}
+            %% set width = image.width
+            %% set height = image.height
+            %% set aspect = width / height
+            <article
+                class="flex-masonry-outer"
+                style="
+                    min-height: {{TARGET_SIZE}}px;
+                    max-height: {{TARGET_SIZE*1.375}}px;
+                    aspect-ratio: {{aspect}};
+                    flex-grow: {{aspect}};
+                ">
+                <div
+                    class="flex-masonry-inner"
+                    style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
+                    >
+                    <a class="thumbnail-container" href="#{{ image.path.stem }}">
+                        <img
+                            class="thumbnail"
+                            style="aspect-ratio: {{aspect}};"
+                            alt="{{ image.title }}"
+                            src="{{ image.path_800w | relative_to(folder.path) }}"
+                        />
+                    </a>
+                </div>
+            </article>
+        {% endfor %}
         {% if folder.images | length %}
         </section>
         {% endif %}
-        -->
         
         {% if folder.images | length %}
         <section id="images">
