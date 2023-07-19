@@ -36,6 +36,10 @@ main {
     margin: 4em 0;
 }
 
+#subfolders, #thumbnails {
+    scroll-snap-align: start;
+}
+
 footer {
     scroll-snap-align: end;
 }
