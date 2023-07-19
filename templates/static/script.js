@@ -1,7 +1,7 @@
 function toggleFullscreen() {
     overrideUrlHashTarget = getCurrentUrlHashTarget();
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {}).then();
+        document.documentElement.requestFullscreen({navigationUI: "hide"});
     } else {
         document.exitFullscreen();
     }
@@ -47,10 +47,11 @@ function getTargetUrlFirFirstVisibleUrlHashTarget() {
 }
 
 overrideUrlHashTarget = null;
-function scrollCurrentUrlHashTargetIntoView() {
+function scrollCurrentUrlHashTargetIntoView(scrollBehavior) {
+    scrollBehavior = scrollBehavior || "auto";
     const currentUrlHashTarget = overrideUrlHashTarget || getCurrentUrlHashTarget();
     overrideUrlHashTarget = null;
-    currentUrlHashTarget.scrollIntoView()
+    currentUrlHashTarget.scrollIntoView({behavior: scrollBehavior})
 }
 
 function setUrlHashToFirstVisibleUrlHashTargetNow() {
@@ -84,7 +85,7 @@ document.addEventListener("scrollend", (event) => {
 });
 
 document.addEventListener("fullscreenchange", (event) => {
-    scrollCurrentUrlHashTargetIntoView();
+    scrollCurrentUrlHashTargetIntoView("instant");
 });
 
 document.addEventListener("onload", (event) => {

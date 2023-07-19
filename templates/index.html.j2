@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="smooth-scroll">
 <head>
     <meta charset="utf-8" />
     <title>{{folder.title}}
@@ -30,7 +30,7 @@
             %% set image = subfolder.cover_image
             %% set width = image.width
             %% set height = image.height
-            %% set aspect = width / height
+            %% set aspect = (width / height) | round(2)
             <article
                 class="flex-masonry-outer"
                 style="
@@ -60,13 +60,13 @@
         {% endif %}
 
         {% if folder.images | length %}
-        <section id="thumbnails" style="min-height: 100vh;"><div class="flex-masonry">
+        <section id="thumbnails" style="min-height: 50vh;"><div class="flex-masonry">
         {% endif %}
         {% set TARGET_SIZE = 150 %}
         {% for name, image in folder.images.items() %}
             %% set width = image.width
             %% set height = image.height
-            %% set aspect = width / height
+            %% set aspect = (width / height) | round(2)
             <article
                 class="flex-masonry-outer"
                 style="
