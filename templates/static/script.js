@@ -1,113 +1,106 @@
 function toggleFullscreen() {
-    let elem = document.documentElement;
-
     if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch((err) => {}).then();
+        document.documentElement.requestFullscreen().catch((err) => {}).then();
     } else {
         document.exitFullscreen();
     }
 }
 
-function getCurrentImageOrHeader() {
-    return window.location.hash && document.querySelector(`article.image${window.location.hash}`) || document.querySelector("header");
+function defaultHashTarget() {
+    return document.querySelector("header");
 }
-
-function scrollCurrentImageIntoView() {
-    const currentImage = getCurrentImageOrHeader();
-    currentImage.scrollIntoView()
-}
-
-document.addEventListener("fullscreenchange", (event) => {
-    scrollCurrentImageIntoView();
-});
 
 function getCandidateUrlHashTargets() {
     return document.querySelectorAll("header, article.image, #bottom");
 }
 
-function getFirstVisibleImage() {
+function getCurrentUrlHashTarget() {
+    return window.location.hash && document.querySelector(window.location.hash) || defaultHashTarget();
+}
+
+function getFirstVisibleUrlHashTarget() {
     const viewport = window.visualViewport;
     const candidates = getCandidateUrlHashTargets();
     for (const candidate of candidates) {
-        const image = candidate.querySelector("picture") || candidate;
-        const rect = image.getBoundingClientRect();
-        // Check if the candidate vertically overlaps with the viewport
-        console.log(`${image.id}: rect.top=${rect.top} <= viewport.offsetTop=${viewport.offsetTop} + viewport.height=${viewport.height} && viewport.offsetTop=${viewport.offsetTop} < rect.bottom=${rect.bottom}`)
-        if (rect.top <= viewport.offsetTop + viewport.height && viewport.offsetTop < rect.bottom - rect.height * 0.1875) {
-            return candidate;
-        }
+        const rect = candidate.getBoundingClientRect();
+        if (rect.top <= viewport.offsetTop + viewport.height &&
+            viewport.offsetTop < rect.bottom - rect.height * 0.1875
+        ) { return candidate; }
     }
+    return defaultHashTarget();
 }
 
-function getTargetUrlForFirstVisibleImage() {
-    const id = getFirstVisibleImage().id;
+function getTargetUrlFirFirstVisibleUrlHashTarget() {
+    const id = getFirstVisibleUrlHashTarget().id;
     return id && `#${id}` || window.location.origin + window.location.pathname + window.location.search;
 }
 
-let throttledPushState = null;
+function scrollCurrentUrlHashTargetIntoView() {
+    const currentUrlHashTarget = getCurrentUrlHashTarget();
+    currentUrlHashTarget.scrollIntoView()
+}
+
+function setUrlHashToFirstVisibleUrlHashTargetNow() {
+    const targetUrl = getTargetUrlFirFirstVisibleUrlHashTarget();
+    window.history.replaceState(null, null, targetUrl);
+}
+
+let _scrollEventThrottleTimeout = null;
+let _scrollEventThrottled = false;
+function setUrlHashToFirstVisibleUrlHashTargetThrottled() {
+    if (!_scrollEventThrottled) {
+        _scrollEventThrottled = true;
+        _scrollEventThrottleTimeout = setTimeout(() => {
+            setUrlHashToFirstVisibleUrlHashTargetNow();
+            _scrollEventThrottled = false;
+        }, 200);
+        setUrlHashToFirstVisibleUrlHashTargetNow();
+    }
+}
 
 document.addEventListener("scroll", (event) => {
-    const targetUrl = getTargetUrlForFirstVisibleImage();
-
-    if (window.location.hash !== targetUrl) {
-        clearTimeout(throttledPushState); // Clear any existing timeout
-
-        if (!throttledPushState || throttledPushState.fired) {
-            window.history.replaceState(null, null, targetUrl);
-            throttledPushState = { fired: true }; // Mark the timeout as fired
-        } else {
-            throttledPushState = setTimeout(() => {
-                const targetUrl = `#${getFirstVisibleImage().id}`;
-                window.history.replaceState(null, null, targetUrl);
-                throttledPushState.fired = true; // Mark the timeout as fired
-            }, 1000); // 1000 milliseconds = 1 second
-        }
-    }
+    setUrlHashToFirstVisibleUrlHashTargetThrottled();
 });
 
 document.addEventListener("scrollend", (event) => {
-    const targetUrl = getTargetUrlForFirstVisibleImage();
-    window.history.replaceState(null, null, targetUrl);
+    setUrlHashToFirstVisibleUrlHashTargetNow();
 });
 
-document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === " " && !event.shiftKey) {
-        const currentImage = getCurrentImageOrHeader();
-        const images = getCandidateUrlHashTargets();
-        for (let i = 0; i < images.length; i++) {
-            if (images[i] === currentImage) {
-                const nextSibling = images[i + 1];
-                if (nextSibling) {
-                    nextSibling.scrollIntoView({ behavior: "smooth" });
-                }
-                event.preventDefault();
+document.addEventListener("fullscreenchange", (event) => {
+    scrollCurrentUrlHashTargetIntoView();
+});
+
+document.addEventListener("onload", (event) => {
+    scrollCurrentUrlHashTargetIntoView();
+});
+
+function scrollToNextUrlHashTarget(next) {
+    const currentUrlHashTarget = getCurrentUrlHashTarget();
+    const candidates = getCandidateUrlHashTargets();
+    for (let i = 0; i < candidates.length; i++) {
+        if (candidates[i] === currentUrlHashTarget) {
+            const nextSibling = candidates[i + next];
+            if (nextSibling) {
+                nextSibling.scrollIntoView({ behavior: "smooth" });
                 return;
+            } else {
+                console.log("Cannot find next sibling", candidates[i]);
             }
         }
-        // If we get stuck, try to get unstuck
-        window.scrollBy({"top": 10, "behavior": "smooth"});
-        event.preventDefault();
-        return;
     }
-    if (event.key === "ArrowUp" || event.key === "ArrowLeft" || event.key === " " && event.shiftKey) {
-        const currentImage = getCurrentImageOrHeader();
-        const images = getCandidateUrlHashTargets();
-        for (let i = 0; i < images.length; i++) {
-            if (images[i] === currentImage) {
-                const prevSibling = images[i - 1];
-                if (prevSibling) {
-                    prevSibling.scrollIntoView({ behavior: "smooth" });
-                }
-                event.preventDefault();
-                return ;
-            }
-        }
-        // If we get stuck, try to get unstuck
-        window.scrollBy({"top": -10, "behavior": "smooth"});
+    // If we get stuck, try to get unstuck
+    window.scrollBy({"top": 10 * next, "behavior": "smooth"});
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === "ArrowRight" || event.key === " " && !event.shiftKey) {
+        scrollToNextUrlHashTarget(+1);
         event.preventDefault();
-        return;
-    }
-    if (event.key === "f" || event.key === "Enter") {
+    } else if (event.key === "ArrowUp" || event.key === "PageUp" || event.key === "ArrowLeft" || event.key === " " && event.shiftKey) {
+        scrollToNextUrlHashTarget(-1);
+        event.preventDefault();
+    } else if (event.key === "f" || event.key === "Enter") {
         toggleFullscreen();
+        event.preventDefault();
     }
 });
