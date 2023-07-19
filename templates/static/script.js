@@ -12,7 +12,7 @@ function defaultHashTarget() {
 }
 
 function getCandidateUrlHashTargets() {
-    return document.querySelectorAll("header, article.image, #bottom");
+    return document.querySelectorAll("header, #subfolders, article.image, footer");
 }
 
 function getCurrentUrlHashTarget() {

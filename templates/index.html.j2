@@ -21,8 +21,10 @@
         </nav>
     </header>
 
-    <main>
+    <main id="main">
+        {% if folder.subfolders | length %}
         <section id="subfolders">
+        {% endif %}
         {% set TARGET_SIZE = 150 %}
         {% for subfolder in folder.subfolders.values() %}
             %% set image = subfolder.cover_image
@@ -53,9 +55,13 @@
                 </div>
             </article>
         {% endfor %}
+        {% if folder.subfolders | length %}
         </section>
+        {% endif %}
         
+        {% if folder.images | length %}
         <section id="images">
+        {% endif %}
         {% for name, image in folder.images.items() %}
             <article class="image" id="{{ image.path.stem }}">
                 <picture style="display: block;">
@@ -91,7 +97,9 @@
                 </div>
             </article>
         {% endfor %}
+        {% if folder.images | length %}
         </section>
+        {% endif %}
     </main>
   
     <footer id="bottom">
