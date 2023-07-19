@@ -12,6 +12,10 @@
     margin: 0;
 }
 
+html {
+    scroll-snap-type: y proximity;
+}
+
 body {
     line-height: calc(1em + 0.75rem);
     -webkit-font-smoothing: antialiased;
@@ -21,9 +25,11 @@ body {
     color: black;
     background-color: white;
     padding: 0 2ex;
+    scroll-snap-stop: start;
 }
 
 header {
+    scroll-snap-stop: start;
     padding: 2ex 0;
 }
 
@@ -104,6 +110,15 @@ svg {
     background-color: #000000a0;
     text-shadow: 0 0 5px black, 1px 0px 1px black, 0px 1px 1px black, -1px 0px 1px black, 0px -1px 1px black;
     text-decoration: none;
+}
+
+article.image picture {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+article.image div.description {
+    scroll-snap-align: end;
 }
 
 article.image picture img {

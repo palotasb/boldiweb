@@ -34,13 +34,13 @@
             class="subfolder"
             style="
                 min-height: {{TARGET_SIZE}}px;
-                max-height: {{TARGET_SIZE*1.5}}px;
+                max-height: {{TARGET_SIZE*1.375}}px;
                 aspect-ratio: {{aspect}};
                 flex-grow: {{aspect}};
             ">
             <div
                 class="subfolder-inner"
-                style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.5}}px;"
+                style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
                 >
                 <a class="thumbnail-container" href="{{subfolder.path | relative_to(folder.path)}}/index.html">
                     <img
@@ -64,6 +64,7 @@
                     src="{{image.path | relative_to(folder.path)}}"
                     alt="{{image.exif.IPTC.Artist}}" />
             </picture>
+            <div class="description">
             <h2><a href="#{{ image.path.stem }}">{{image.title}}
                 {% if image.title != image.source.path.stem %}
                 <small>[{{image.path.stem}}]</small>
@@ -88,6 +89,7 @@
                 <a href="#top" class="subtle">⇧ {{ folder.title }}</a> |
                 <a href="javascript:toggleFullscreen()" class="subtle"><span>📺 </span>Full screen</a>
             </p>
+            </div>
         </article>
     {% endfor %}
     </section>
