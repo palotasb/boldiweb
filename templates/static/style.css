@@ -25,11 +25,11 @@ body {
     color: black;
     background-color: white;
     padding: 0 2ex;
-    scroll-snap-stop: start;
+    scroll-snap-align: start;
 }
 
 header {
-    scroll-snap-stop: start;
+    scroll-snap-align: start;
     padding: 2ex 0;
 }
 
@@ -114,7 +114,6 @@ svg {
 
 article.image picture {
     scroll-snap-align: start;
-    scroll-snap-stop: always;
 }
 
 article.image div.description {
