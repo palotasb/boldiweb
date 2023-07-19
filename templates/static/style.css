@@ -59,9 +59,10 @@ video,
 canvas,
 svg {
     display: block;
+    object-fit: contain;
 }
 
-#subfolders {
+.flex-masonry {
     display: flex;
     flex-flow: row wrap;
     align-items: flex-start;
@@ -69,33 +70,27 @@ svg {
     gap: 0.5em;
 }
 
-#subfolders > article.subfolder {
+.flex-masonry > .flex-masonry-outer {
     flex-basis: auto;
     flex-shrink: 0;
 }
 
-#subfolders > article.subfolder:last-child {
-    margin-right: auto;
-}
-
-#subfolders > article.subfolder > div.subfolder-inner {
+.flex-masonry > .flex-masonry-outer > .flex-masonry-inner {
     position: relative;
     overflow: hidden;
 }
 
-#subfolders > article.subfolder > div.subfolder-inner > a.thumbnail-container {
+#subfolders a.thumbnail-container {
     position: absolute;
     width: 100%;
     height: 100%;
 }
 
-#subfolders > article.subfolder > div.subfolder-inner > a.thumbnail-container > img {
-    object-fit: contain;
-    object-position: bottom left;
+#subfolders img {
     height: 100%;
 }
 
-#subfolders > article.subfolder > div.subfolder-inner > h2 {
+#subfolders h2 {
     position: absolute;
     left: 0;
     bottom: 0;
@@ -105,7 +100,7 @@ svg {
     font-weight: normal;
 }
 
-#subfolders > article.subfolder > div.subfolder-inner > h2 > a {
+#subfolders h2 > a {
     display: block;
     width: 100%;
     padding: 0.25em .5em;

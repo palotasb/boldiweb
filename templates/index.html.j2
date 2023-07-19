@@ -23,7 +23,7 @@
 
     <main id="main">
         {% if folder.subfolders | length %}
-        <section id="subfolders">
+        <section id="subfolders" class="flex-masonry">
         {% endif %}
         {% set TARGET_SIZE = 150 %}
         {% for subfolder in folder.subfolders.values() %}
@@ -32,7 +32,7 @@
             %% set height = image.height
             %% set aspect = width / height
             <article
-                class="subfolder"
+                class="flex-masonry-outer"
                 style="
                     min-height: {{TARGET_SIZE}}px;
                     max-height: {{TARGET_SIZE*1.375}}px;
@@ -40,7 +40,7 @@
                     flex-grow: {{aspect}};
                 ">
                 <div
-                    class="subfolder-inner"
+                    class="flex-masonry-inner"
                     style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
                     >
                     <a class="thumbnail-container" href="{{subfolder.path | relative_to(folder.path)}}/index.html">
@@ -58,6 +58,16 @@
         {% if folder.subfolders | length %}
         </section>
         {% endif %}
+
+        <!--
+        {% if folder.images | length %}
+        <section id="thumbnails">
+        {% endif %}
+
+        {% if folder.images | length %}
+        </section>
+        {% endif %}
+        -->
         
         {% if folder.images | length %}
         <section id="images">
