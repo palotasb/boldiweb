@@ -18,14 +18,24 @@ function getCurrentUrlHashTarget() {
     return window.location.hash && document.querySelector(window.location.hash) || defaultHashTarget();
 }
 
-function getFirstVisibleUrlHashTarget() {
+function isElementVisible(element) {
     const viewport = window.visualViewport;
+    const rect = element.getBoundingClientRect();
+    return (rect.top <= viewport.offsetTop + viewport.height &&
+        viewport.offsetTop < rect.bottom - rect.height * 0.1875
+    );
+}
+
+function getFirstVisibleUrlHashTarget() {
     const candidates = getCandidateUrlHashTargets();
+    lastElement = candidates[candidates.length - 1];
+    if (isElementVisible(lastElement)) {
+        return lastElement;
+    }
     for (const candidate of candidates) {
-        const rect = candidate.getBoundingClientRect();
-        if (rect.top <= viewport.offsetTop + viewport.height &&
-            viewport.offsetTop < rect.bottom - rect.height * 0.1875
-        ) { return candidate; }
+        if (isElementVisible(candidate)) {
+            return candidate;
+        }
     }
     return defaultHashTarget();
 }
