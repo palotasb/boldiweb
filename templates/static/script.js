@@ -1,5 +1,4 @@
 function toggleFullscreen() {
-    overrideUrlHashTarget = getCurrentUrlHashTarget();
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen({navigationUI: "hide"});
     } else {
@@ -46,11 +45,9 @@ function getTargetUrlFirFirstVisibleUrlHashTarget() {
     return id && `#${id}` || window.location.origin + window.location.pathname + window.location.search;
 }
 
-overrideUrlHashTarget = null;
 function scrollCurrentUrlHashTargetIntoView(scrollBehavior) {
     scrollBehavior = scrollBehavior || "auto";
-    const currentUrlHashTarget = overrideUrlHashTarget || getCurrentUrlHashTarget();
-    overrideUrlHashTarget = null;
+    const currentUrlHashTarget = getCurrentUrlHashTarget();
     currentUrlHashTarget.scrollIntoView({behavior: scrollBehavior})
 }
 
