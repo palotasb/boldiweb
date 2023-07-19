@@ -62,8 +62,10 @@ document.addEventListener("scroll", (event) => {
     setUrlHashToFirstVisibleUrlHashTargetThrottled();
 });
 
+scrolling = 1;
 document.addEventListener("scrollend", (event) => {
     setUrlHashToFirstVisibleUrlHashTargetNow();
+    scrolling = 1;
 });
 
 document.addEventListener("fullscreenchange", (event) => {
@@ -79,9 +81,10 @@ function scrollToNextUrlHashTarget(next) {
     const candidates = getCandidateUrlHashTargets();
     for (let i = 0; i < candidates.length; i++) {
         if (candidates[i] === currentUrlHashTarget) {
-            const nextSibling = candidates[i + next];
-            if (nextSibling) {
-                nextSibling.scrollIntoView({ behavior: "smooth" });
+            const newTarget = candidates[Math.max(0, Math.min(i + next * scrolling, candidates.length - 1))];
+            if (newTarget) {
+                scrolling = scrolling + 1;
+                newTarget.scrollIntoView({ behavior: "smooth" });
                 return;
             }
         }
