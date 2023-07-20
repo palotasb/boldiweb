@@ -26,6 +26,12 @@ function isElementVisible(element) {
     );
 }
 
+function isElementPreciselyScrolledIntoView(element) {
+    const viewport = window.visualViewport;
+    const rect = element.getBoundingClientRect();
+    return (viewport.offsetTop -5 <= rect.top && rect.top <= viewport.offsetTop + 5);
+}
+
 function getFirstVisibleUrlHashTarget() {
     const candidates = getCandidateUrlHashTargets();
     lastElement = candidates[candidates.length - 1];
@@ -92,6 +98,9 @@ document.addEventListener("onload", (event) => {
 scrollingTo = null;
 function scrollToNextUrlHashTarget(next) {
     const currentUrlHashTarget = scrollingTo || getCurrentUrlHashTarget();
+    if (!scrollingTo && !isElementPreciselyScrolledIntoView(currentUrlHashTarget) && next === 1) {
+        next = 0;
+    }
     const candidates = getCandidateUrlHashTargets();
     for (let i = 0; i < candidates.length; i++) {
         if (candidates[i] === currentUrlHashTarget) {
