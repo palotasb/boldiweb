@@ -93,6 +93,18 @@
         {% if folder.images | length %}
         </div></section>
         {% endif %}
+
+        <aside id="usage">
+            <p>
+                <a class="subtle" href="javascript:toggleFullScreen()"><kbd>F</kbd> <span>Full Screen</span></a>
+                |
+                <a class="subtle" href="#top"><kbd>E</kbd>, <kbd>H</kbd> <span>Overview</span></a>
+                |
+                <a class="subtle" href="#thumbnails"><kbd>G</kbd> <span>Thumbnails</span></a>
+                |
+                <a class="subtle" href="#images"><kbd>P</kbd> <span>Pictures</span></a>
+            </p>
+        </aside>
         
         {% if folder.images | length %}
         <section id="images">
@@ -127,7 +139,7 @@
                 </p>
                 <p>
                     <a href="#top" class="subtle">⇧ {{ folder.title }}</a> |
-                    <a href="javascript:toggleFullscreen()" class="subtle"><span>📺 </span>Full screen</a>
+                    <a href="javascript:toggleFullScreen()" class="subtle"><span>📺 </span>Full screen</a>
                 </p>
                 </div>
             </article>
