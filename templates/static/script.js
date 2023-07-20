@@ -1,4 +1,4 @@
-function toggleFullscreen() {
+function toggleFullScreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen({navigationUI: "hide"});
     } else {
@@ -128,8 +128,10 @@ document.addEventListener("keydown", (event) => {
         document.querySelector("footer").scrollIntoView();
     } else if (event.key === "g") {
         document.querySelector("#thumbnails, #subfolders").scrollIntoView();
+    } else if (event.key === "p") {
+        document.querySelector("#images").scrollIntoView();
     } else if (event.key === "f" || event.key === "Enter") {
-        toggleFullscreen();
+        toggleFullScreen();
     } else {
         // DON'T event.preventDefault() if event isn't handled 
         return;
