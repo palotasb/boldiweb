@@ -60,7 +60,7 @@
         {% endif %}
 
         {% if folder.images | length %}
-        <section id="thumbnails" style="min-height: 50vh;"><div class="flex-masonry">
+        <section id="thumbnails" class="flex-masonry">
         {% endif %}
         {% set TARGET_SIZE = 150 %}
         {% for name, image in folder.images.items() %}
@@ -91,7 +91,7 @@
             </article>
         {% endfor %}
         {% if folder.images | length %}
-        </div></section>
+        </section>
         {% endif %}
 
         <aside id="usage">
