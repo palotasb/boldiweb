@@ -109,7 +109,7 @@ svg {
     height: 100%;
 }
 
-#subfolders h2 {
+#subfolders figcaption {
     position: absolute;
     left: 0;
     bottom: 0;
@@ -119,7 +119,7 @@ svg {
     font-weight: normal;
 }
 
-#subfolders h2 > a {
+#subfolders figcaption > a {
     display: block;
     width: 100%;
     padding: 0.25em .5em;
@@ -129,9 +129,23 @@ svg {
     text-decoration: none;
 }
 
+#images {
+    position: relative;
+}
+
+article.image {
+    max-width: 100ex;
+    margin: 0 auto;
+}
+
+article.image .image-container {
+    height: 100vh;
+    margin: 2em 0;
+}
+
 article.image picture {
     scroll-snap-align: start;
-    position: relative;
+    position: absolute;
     left: -2ex;
     display: block;
     width: 100vw;
@@ -140,6 +154,7 @@ article.image picture {
 
 article.image div.description {
     scroll-snap-align: end;
+    margin: 2em 0 4em 0;
 }
 
 input,

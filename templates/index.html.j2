@@ -31,7 +31,7 @@
             %% set width = image.width
             %% set height = image.height
             %% set aspect = (width / height) | round(2)
-            <article
+            <div
                 class="flex-masonry-outer"
                 style="
                     min-height: {{TARGET_SIZE}}px;
@@ -39,7 +39,7 @@
                     aspect-ratio: {{aspect}};
                     flex-grow: {{aspect}};
                 ">
-                <div
+                <figure
                     class="flex-masonry-inner"
                     style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
                     >
@@ -51,9 +51,9 @@
                             src="{{ image.path_800w | relative_to(folder.path) }}"
                         />
                     </a>
-                    <h2><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></h2>                
-                </div>
-            </article>
+                    <figcaption><a href="{{subfolder.path | relative_to(folder.path)}}/index.html">{{subfolder.title}}</a></figcaption>
+                </figure>
+            </div>
         {% endfor %}
         {% if folder.subfolders | length %}
         </section>
@@ -67,7 +67,7 @@
             %% set width = image.width
             %% set height = image.height
             %% set aspect = (width / height) | round(2)
-            <article
+            <div
                 class="flex-masonry-outer"
                 style="
                     min-height: {{TARGET_SIZE}}px;
@@ -88,7 +88,7 @@
                         />
                     </a>
                 </div>
-            </article>
+            </div>
         {% endfor %}
         {% if folder.images | length %}
         </section>
@@ -111,11 +111,13 @@
         {% endif %}
         {% for name, image in folder.images.items() %}
             <article class="image" id="{{ image.path.stem }}">
-                <picture style="display: block;">
-                    <img class="image"
-                        src="{{image.path | relative_to(folder.path)}}"
-                        alt="{{image.exif.IPTC.Artist}}" />
-                </picture>
+                <div class="image-container">
+                    <picture style="display: block;">
+                        <img class="image"
+                            src="{{image.path | relative_to(folder.path)}}"
+                            alt="{{image.exif.IPTC.Artist}}" />
+                    </picture>
+                </div>
                 <div class="description">
                 <h2><a href="#{{ image.path.stem }}">{{image.title}}
                     {% if image.title != image.source.path.stem %}
