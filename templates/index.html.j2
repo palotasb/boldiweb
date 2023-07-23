@@ -92,7 +92,7 @@
         {% for name, image in folder.images.items() %}
             <article class="image" id="{{ image.path.stem }}">
                 <div class="image-container">
-                    <picture style="display: block;">
+                    <picture style="display: block;" onclick="scrollToNextUrlHashTarget(+1);">
                         <img class="image"
                             src="{{image.path | relative_to(folder.path)}}"
                             alt="{{image.exif.IPTC.Artist}}" />
