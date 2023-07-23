@@ -74,17 +74,25 @@
         </section>
         {% endif %}
 
+
+        {% if folder.images | length %}
         <aside id="usage">
             <p>
-                <a href="javascript:toggleFullScreen()"><kbd>F</kbd> <span>Full Screen</span></a>
-                |
-                <a href="#top"><kbd>E</kbd>, <kbd>H</kbd> <span>Overview</span></a>
+                Go to:
+                <a href="#top"><kbd>E</kbd> <span>Top</span></a>
                 |
                 <a href="#thumbnails"><kbd>G</kbd> <span>Thumbnails</span></a>
                 |
                 <a href="#images"><kbd>P</kbd> <span>Pictures</span></a>
+                |
+                <a href="javascript:toggleFullScreen()"><kbd>F</kbd> <span>Full Screen</span></a>
+                |
+                <a href="javascript:scrollToNextUrlHashTarget(-1);"><kbd>⇐</kbd> <span>Previous</span></a>
+                |
+                <a href="javascript:scrollToNextUrlHashTarget(+1);"><kbd>⇒</kbd> <span>Next</span></a>
             </p>
         </aside>
+        {% endif %}
         
         {% if folder.images | length %}
         <section id="images">
