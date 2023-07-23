@@ -59,7 +59,7 @@
             %% set aspect = (width / height) | round(2)
             <div class="flex-masonry-outer" style=" aspect-ratio: {{aspect}}; flex-grow: {{aspect}};">
                 <div class="flex-masonry-inner" style="aspect-ratio: {{aspect}};">
-                    <a class="thumbnail-container" href="#{{ image.path.stem }}">
+                    <a id="{{ image.path.stem }}.thumbnail" class="thumbnail-container" href="#{{ image.path.stem }}">
                         <img
                             class="thumbnail"
                             style="aspect-ratio: {{aspect}};"
@@ -100,7 +100,7 @@
         {% for name, image in folder.images.items() %}
             <article class="image" id="{{ image.path.stem }}">
                 <div class="image-container">
-                    <picture style="display: block;" onclick="scrollToNextUrlHashTarget(+1);">
+                    <picture style="display: block;" onclick="scrollToNextUrlHashTarget(+1, document.querySelector('#{{ image.path.stem }}'));">
                         <img class="image"
                             srcset="{{ image.path_800w | relative_to(folder.path) }} 800w, {{ image.path_1500w | relative_to(folder.path) }} 1500w, {{ image.path_3000w | relative_to(folder.path) }} 3000w, {{image.path | relative_to(folder.path)}}"
                             src="{{image.path | relative_to(folder.path)}}"
@@ -129,7 +129,7 @@
                     {{image.lens}}
                 </p>
                 <p>
-                    <a href="#top">⇧ {{ folder.title }}</a> |
+                    <a href="#{{ image.path.stem }}.thumbnail">⇧ {{ folder.title }}</a> |
                     <a href="javascript:toggleFullScreen()"><span>📺 </span>Full screen</a>
                 </p>
                 </div>

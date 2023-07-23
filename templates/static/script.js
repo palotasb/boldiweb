@@ -100,14 +100,14 @@ document.addEventListener("onload", (event) => {
 });
 
 scrollingTo = null;
-function scrollToNextUrlHashTarget(next) {
-    const currentUrlHashTarget = scrollingTo || getCurrentUrlHashTarget();
-    if (!scrollingTo && !isElementPreciselyScrolledIntoView(currentUrlHashTarget) && next === 1) {
+function scrollToNextUrlHashTarget(next, source) {
+    const baseTarget = scrollingTo || source || getCurrentUrlHashTarget();
+    if (!scrollingTo && !isElementPreciselyScrolledIntoView(baseTarget) && next === 1) {
         next = 0;
     }
     const candidates = getCandidateUrlHashTargets();
     for (let i = 0; i < candidates.length; i++) {
-        if (candidates[i] === currentUrlHashTarget) {
+        if (candidates[i] === baseTarget) {
             const newTarget = candidates[i + next];
             if (newTarget) {
                 scrollingTo = newTarget;
