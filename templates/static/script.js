@@ -34,6 +34,10 @@ function isElementPreciselyScrolledIntoView(element) {
 
 function getFirstVisibleUrlHashTarget() {
     const candidates = getCandidateUrlHashTargets();
+    firstElement = candidates[0];
+    if (isElementVisible(firstElement)) {
+        return firstElement;
+    }
     lastElement = candidates[candidates.length - 1];
     if (isElementVisible(lastElement)) {
         return lastElement;
