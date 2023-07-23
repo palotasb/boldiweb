@@ -311,9 +311,9 @@ class TargetImageHandler(FileHandler):
             FileHandler.stamp(self, path)
             for path in [
                 image.path,
-                # image.path_3000w,
-                # image.path_1500w,
-                # image.path_800w,
+                image.path_3000w,
+                image.path_1500w,
+                image.path_800w,
                 image.exif_path,
             ]
         )
