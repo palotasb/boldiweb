@@ -32,18 +32,8 @@
             %% set width = image.width
             %% set height = image.height
             %% set aspect = (width / height) | round(2)
-            <div
-                class="flex-masonry-outer"
-                style="
-                    min-height: {{TARGET_SIZE}}px;
-                    max-height: {{TARGET_SIZE*1.375}}px;
-                    aspect-ratio: {{aspect}};
-                    flex-grow: {{aspect}};
-                ">
-                <figure
-                    class="flex-masonry-inner"
-                    style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
-                    >
+            <div class="flex-masonry-outer" style=" aspect-ratio: {{aspect}}; flex-grow: {{aspect}};">
+                <figure class="flex-masonry-inner" style="aspect-ratio: {{aspect}};">
                     <a class="thumbnail-container" href="{{subfolder.path | relative_to(folder.path)}}/index.html">
                         <img
                             class="thumbnail"
@@ -63,23 +53,12 @@
         {% if folder.images | length %}
         <section id="thumbnails" class="flex-masonry">
         {% endif %}
-        {% set TARGET_SIZE = 150 %}
         {% for name, image in folder.images.items() %}
             %% set width = image.width
             %% set height = image.height
             %% set aspect = (width / height) | round(2)
-            <div
-                class="flex-masonry-outer"
-                style="
-                    min-height: {{TARGET_SIZE}}px;
-                    max-height: {{TARGET_SIZE*1.375}}px;
-                    aspect-ratio: {{aspect}};
-                    flex-grow: {{aspect}};
-                ">
-                <div
-                    class="flex-masonry-inner"
-                    style="aspect-ratio: {{aspect}}; max-height: {{TARGET_SIZE*1.375}}px;"
-                    >
+            <div class="flex-masonry-outer" style=" aspect-ratio: {{aspect}}; flex-grow: {{aspect}};">
+                <div class="flex-masonry-inner" style="aspect-ratio: {{aspect}};">
                     <a class="thumbnail-container" href="#{{ image.path.stem }}">
                         <img
                             class="thumbnail"

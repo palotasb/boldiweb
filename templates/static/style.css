@@ -87,16 +87,31 @@ svg {
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.5em;
+    overflow: hidden;
 }
 
 .flex-masonry > .flex-masonry-outer {
     flex-basis: auto;
     flex-shrink: 0;
+    min-height: 100px;
+    max-height: 125px;
 }
 
 .flex-masonry > .flex-masonry-outer > .flex-masonry-inner {
     position: relative;
     overflow: hidden;
+    max-height: 125px;
+}
+
+@media (min-width: 80rem) {
+    .flex-masonry > .flex-masonry-outer  {
+        min-height: 125px;
+        max-height: 150px;
+    }
+
+    .flex-masonry > .flex-masonry-outer > .flex-masonry-inner {
+        max-height: 155px;
+    }
 }
 
 .flex-masonry .thumbnail-container {
@@ -130,6 +145,7 @@ svg {
 }
 
 article.image {
+    scroll-snap-align: start;
     max-width: 100ex;
     margin: 0 auto;
 }
@@ -140,7 +156,7 @@ article.image .image-container {
 }
 
 article.image picture {
-    scroll-snap-align: start;
+    /* scroll-snap-align: start; */
     position: absolute;
     left: -2ex;
     display: block;
@@ -149,7 +165,7 @@ article.image picture {
 }
 
 article.image div.description {
-    scroll-snap-align: end;
+    /* scroll-snap-align: end; */
     margin: 2em 0 4em 0;
 }
 
