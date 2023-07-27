@@ -21,8 +21,8 @@ body {
     -webkit-font-smoothing: antialiased;
     font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif; 
     font-size: 16px;
-    color: black;
-    background-color: white;
+    color: white;
+    background-color: #111;
     padding: 0 2ex;
 }
 
@@ -45,20 +45,20 @@ p {
 }
 
 a {
-    color: blue;
+    color: #8af;
     text-decoration: none;
 }
 
 kbd {
     display: inline-block;
-    border: 2px outset #ddd;
+    border: 2px outset #222;
     border-radius: 5px;
-    background-color: #eee;
+    background-color: #333;
     padding: 0.05em 0.5ex;
-    box-shadow: 0px 2px 3px #8888;
+    box-shadow: 0px 0px 4px #0008;
     font-size: 0.9em;
     line-height: 1.2em;
-    color: #666;
+    color: #aaa;
 }
 
 img,
@@ -162,7 +162,7 @@ article.image .image-description {
 }
 
 .gray-text {
-    color: #666;
+    color: #aaa;
 }
 
 input,
