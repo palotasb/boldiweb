@@ -177,6 +177,10 @@ class TargetImage:
         return self.exif["Composite"].get("LightValue")
 
     @property
+    def exposure_compensation(self) -> Optional[int]:
+        return self.exif["EXIF"].get("ExposureCompensation")
+
+    @property
     def camera(self) -> str:
         make: str = self.exif["EXIF"].get("Make", "")
         if make == make.upper():
@@ -326,13 +330,34 @@ class TargetImageHandler(FileHandler):
         with Image.open(image.path) as pil_image:
             w, h = 3000, round(3000 / pil_image.size[0] * pil_image.size[1])
             with pil_image.resize((w, h)) as resized_image:
-                resized_image.save(image.path_3000w, quality=95, dpi=(240, 240,))
+                resized_image.save(
+                    image.path_3000w,
+                    quality=95,
+                    dpi=(
+                        240,
+                        240,
+                    ),
+                )
             w, h = 1500, round(1500 / pil_image.size[0] * pil_image.size[1])
             with pil_image.resize((w, h)) as resized_image:
-                resized_image.save(image.path_1500w, quality=95, dpi=(240, 240,))
+                resized_image.save(
+                    image.path_1500w,
+                    quality=95,
+                    dpi=(
+                        240,
+                        240,
+                    ),
+                )
             w, h = 800, round(800 / pil_image.size[0] * pil_image.size[1])
             with pil_image.resize((w, h)) as resized_image:
-                resized_image.save(image.path_800w, quality=95, dpi=(240, 240,))
+                resized_image.save(
+                    image.path_800w,
+                    quality=95,
+                    dpi=(
+                        240,
+                        240,
+                    ),
+                )
 
         with open(image.exif_path, "w") as fp:
             json.dump(get_exif_tags(image.source.path), fp, indent=2)

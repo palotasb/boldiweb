@@ -116,17 +116,18 @@
                 <p class="image-description">
                     {{image.description or undefined}}
                 </p>
-                <p class="exposure-info">
-                    f = {{image.focal_length | human_round or "?"}}mm
-                    ({{image.focal_length_35mm | human_round or "?"}}mm <small>FOV at 35mm equiv.</small>),
-                    𝑓/{{image.aperture | human_round or "?"}},
-                    {{image.shutter_speed | human_round or "?"}}s,
-                    ISO {{image.iso | human_round or "?"}},
-                    LV {{image.light_value | human_round or "?"}}
+                <p class="gray-text">
+                    <span class="un-gray-text">{{image.shutter_speed | human_round or "?"}}</span>s,
+                    𝑓/<span class="un-gray-text">{{image.aperture | human_round or "?"}}</span>,
+                    ISO <span class="un-gray-text">{{image.iso | human_round or "?"}}</span>,
+                    <abbr title="Light Value, the amount of light in the scene">LV</abbr> <span class="un-gray-text">{{image.light_value | human_round or "?"}}</span>,
+                    <abbr title="Exposure compensation">ΔEV</abbr> <span class="un-gray-text">{{image.exposure_compensation | human_round or "0"}}</span>.
                 </p>
-                <p class="camera-info">
+                <p class="gray-text">
                     {{image.camera}} {{ "+" if image.camera and image.lens else "" }}
-                    {{image.lens}}
+                    {{image.lens}} 
+                    at 𝑓 = {{image.focal_length | human_round or "?"}}mm
+                    ({{image.focal_length_35mm | human_round or "?"}}mm <small>at 35mm <abbr title="Equivalent Field of View">equiv. FOV</abbr></small>).
                 </p>
                 <p>
                     <a href="#{{ image.path.stem }}.thumbnail">⇧ {{ folder.title }}</a> |
