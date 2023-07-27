@@ -135,6 +135,8 @@ document.addEventListener("keydown", (event) => {
         || event.key === "k"
         || (event.key === " " && event.shiftKey)) {
         scrollToNextUrlHashTarget(-1);
+    } else if (event.key === ".") {
+        scrollCurrentUrlHashTargetIntoView();
     } else if (event.key === "h" || event.key === "e") {
         document.querySelector("header").scrollIntoView();
     } else if (event.key === "l") {
@@ -145,8 +147,11 @@ document.addEventListener("keydown", (event) => {
         document.querySelector("#images").scrollIntoView();
     } else if (event.key === "f" || event.key === "Enter") {
         toggleFullScreen();
+    } else if (event.key == "q") {
+        document.exitFullscreen();
     } else {
-        // DON'T event.preventDefault() if event isn't handled 
+        console.log(event);
+        // DON'T let event.preventDefault() run if event isn't handled 
         return;
     }
     event.preventDefault();

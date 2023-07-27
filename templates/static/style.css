@@ -28,15 +28,15 @@ body {
 
 header {
     padding: 2ex 0;
-    margin-bottom: 4em;
+    margin-bottom: 8em;
 }
 
 #subfolders, #thumbnails, #images {
-    margin: 4em 0;
+    margin: 8em 0;
 }
 
 footer {
-    margin-top: 4em;
+    margin-top: 8em;
 }
 
 p {
@@ -51,12 +51,14 @@ a {
 
 kbd {
     display: inline-block;
-    border: 3px outset #eee;
+    border: 2px outset #ddd;
     border-radius: 5px;
-    background-color: lightgray;
-    padding: 0 0.4ex;
-    box-shadow: 0px 2px 3px #4448;
-    color: #444;
+    background-color: #eee;
+    padding: 0.05em 0.5ex;
+    box-shadow: 0px 2px 3px #8888;
+    font-size: 0.9em;
+    line-height: 1.2em;
+    color: #666;
 }
 
 img,
@@ -152,15 +154,15 @@ article.image picture {
 }
 
 article.image div.description {
-    margin: 2em 0 4em 0;
+    margin: 2em 0 8em 0;
+}
+
+article.image .image-description {
+    margin-bottom: 2em;
 }
 
 .gray-text {
     color: #666;
-}
-
-.un-gray-text {
-    color: #333;
 }
 
 input,

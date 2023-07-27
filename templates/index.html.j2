@@ -77,7 +77,7 @@
 
         {% if folder.images | length %}
         <aside id="usage">
-            <p>
+            <p style="max-width: 100%; text-align: center;">
                 Go to:
                 <a href="#top"><kbd>E</kbd> <span>Top</span></a>
                 |
@@ -87,9 +87,9 @@
                 |
                 <a href="javascript:toggleFullScreen()"><kbd>F</kbd> <span>Full Screen</span></a>
                 |
-                <a href="javascript:scrollToNextUrlHashTarget(-1);"><kbd>⇐</kbd> <span>Previous</span></a>
+                <a href="javascript:scrollToNextUrlHashTarget(-1);"><kbd>←</kbd> <span>Previous</span></a>
                 |
-                <a href="javascript:scrollToNextUrlHashTarget(+1);"><kbd>⇒</kbd> <span>Next</span></a>
+                <a href="javascript:scrollToNextUrlHashTarget(+1);"><kbd>→</kbd> <span>Next</span></a>
             </p>
         </aside>
         {% endif %}
@@ -117,21 +117,33 @@
                     {{image.description or undefined}}
                 </p>
                 <p class="gray-text">
-                    <span class="un-gray-text">{{image.shutter_speed | human_round or "?"}}</span>s,
-                    𝑓/<span class="un-gray-text">{{image.aperture | human_round or "?"}}</span>,
-                    ISO <span class="un-gray-text">{{image.iso | human_round or "?"}}</span>,
-                    <abbr title="Light Value, the amount of light in the scene">LV</abbr> <span class="un-gray-text">{{image.light_value | human_round or "?"}}</span>,
-                    <abbr title="Exposure compensation">ΔEV</abbr> <span class="un-gray-text">{{image.exposure_compensation | human_round or "0"}}</span>.
+                    {{image.shutter_speed | human_round or "?"}}s,
+                    𝑓/{{image.aperture | human_round or "?"}},
+                    ISO {{image.iso | human_round or "?"}},
+                    <abbr title="Light Value, the amount of light in the scene">LV</abbr> {{image.light_value | human_round or "?"}},
+                    <abbr title="Exposure compensation">ΔEV</abbr> {{image.exposure_compensation | human_round or "0"}}.
                 </p>
                 <p class="gray-text">
                     {{image.camera}} {{ "+" if image.camera and image.lens else "" }}
                     {{image.lens}} 
                     at 𝑓 = {{image.focal_length | human_round or "?"}}mm
-                    ({{image.focal_length_35mm | human_round or "?"}}mm <small>at 35mm <abbr title="Equivalent Field of View">equiv. FOV</abbr></small>).
+                    <small>({{image.focal_length_35mm | human_round or "?"}}mm at 35mm <abbr title="Equivalent Field of View">equiv. FOV</abbr>)</small>.
                 </p>
-                <p>
-                    <a href="#{{ image.path.stem }}.thumbnail">⇧ {{ folder.title }}</a> |
-                    <a href="javascript:toggleFullScreen()"><span>📺 </span>Full screen</a>
+                <p class="gray-text">
+                    Go to:
+                    <a href="#{{ image.path.stem }}.thumbnail"><kbd>G</kbd> ⇧ {{ folder.title }}</a>
+                    |
+                    <a href="javascript:toggleFullScreen()"><kbd>F</kbd> Full screen</a>
+                    {% if loop.previtem %}
+                    |
+                    <a href="#{{ loop.previtem[1].path.stem }}"><kbd>←</kbd> <span>Previous</span></a>
+                    {% endif %}
+                    |
+                    <a href="#{{ image.path.stem }}"><kbd>.</kbd> Current</a>
+                    {% if loop.nextitem %}
+                    |
+                    <a href="#{{ loop.nextitem[1].path.stem }}"><kbd>→</kbd> <span>Next</span></a>
+                    {% endif %}
                 </p>
                 </div>
             </article>
