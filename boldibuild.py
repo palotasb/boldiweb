@@ -108,6 +108,7 @@ class BuildSystem:
         )
         handler.rebuild_impl(target, builder)
         self.db.targets[target] = handler.stamp(target)
+        self.save_build_db()
 
     def build_as_dependency(self, target: Target, dependency: Target, level: int = 0):
         target = str(target)
