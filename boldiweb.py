@@ -8,6 +8,7 @@ import math
 import re
 import shutil
 from dataclasses import InitVar, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -137,8 +138,16 @@ class TargetImage:
         return self.exif["IPTC"].get("ObjectName") or self.source.path.stem
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str:
         return self.exif["IPTC"].get("Caption-Abstract") or ""
+    
+    @property
+    def created_datetime(self) -> Optional[datetime]:
+        created_str = self.exif["Composite"].get("DateTimeCreated", "")
+        try:
+            return datetime.strptime(created_str, "%Y:%m:%d %H:%M:%S")
+        except ValueError:
+            return None
 
     @property
     def width(self) -> Optional[int]:

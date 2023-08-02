@@ -116,6 +116,9 @@
                     {{image.description or undefined}}
                 </p>
                 <p class="gray-text">
+                    {{ image.created_datetime }}
+                </p>
+                <p class="gray-text">
                     {{image.shutter_speed | human_round or "?"}}s,
                     𝑓/{{image.aperture | human_round or "?"}},
                     ISO {{image.iso | human_round or "?"}},
