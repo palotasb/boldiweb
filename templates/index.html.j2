@@ -78,7 +78,6 @@
         {% if folder.images | length %}
         <aside id="usage">
             <p style="max-width: 100%; text-align: center;">
-                Go to:
                 <a href="#top"><kbd>E</kbd> <span>Top</span></a>
                 |
                 <a href="#thumbnails"><kbd>G</kbd> <span>Thumbnails</span></a>
@@ -130,7 +129,6 @@
                     <small>({{image.focal_length_35mm | human_round or "?"}}mm at 35mm <abbr title="Equivalent Field of View">equiv. FOV</abbr>)</small>.
                 </p>
                 <p class="gray-text">
-                    Go to:
                     <a href="#{{ image.path.stem }}.thumbnail"><kbd>G</kbd> ⇧ {{ folder.title }}</a>
                     |
                     <a href="javascript:toggleFullScreen()"><kbd>F</kbd> Full screen</a>
