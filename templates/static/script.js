@@ -122,6 +122,16 @@ function scrollToNextUrlHashTarget(next, source) {
 
 document.addEventListener("keydown", (event) => {
     if (
+        // Ignore if following modifier is active.
+        event.getModifierState("Fn") ||
+        event.getModifierState("Hyper") ||
+        event.getModifierState("OS") ||
+        event.getModifierState("Super") ||
+        event.getModifierState("Meta") ||
+        event.getModifierState("Win")
+    ) {
+        return;
+    } else if (
         event.key === "ArrowDown"
         || event.key === "PageDown"
         || event.key === "ArrowRight" 
@@ -150,7 +160,6 @@ document.addEventListener("keydown", (event) => {
     } else if (event.key == "q") {
         document.exitFullscreen();
     } else {
-        console.log(event);
         // DON'T let event.preventDefault() run if event isn't handled 
         return;
     }
