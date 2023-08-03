@@ -150,12 +150,16 @@ class TargetImage:
             return None
 
     @property
-    def width(self) -> Optional[int]:
-        return self.exif["File"].get("ImageWidth")
+    def width(self) -> int:
+        w = self.exif["File"]["ImageWidth"]
+        assert w, f"missing width: {self.path.name}"
+        return w
 
     @property
-    def height(self) -> Optional[int]:
-        return self.exif["File"].get("ImageHeight")
+    def height(self) -> int:
+        h = self.exif["File"]["ImageHeight"]
+        assert h, f"missing height: {self.path.name}"
+        return h
 
     @property
     def rating(self) -> int:
@@ -222,7 +226,6 @@ class TargetFolder:
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
     total_image_count: int = field(init=False)
-    cover_image: TargetImage = None  # field(init=False)
 
     def __post_init__(self):
         self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
@@ -240,6 +243,19 @@ class TargetFolder:
             self.images[image.path.name] = image
         subfolders_image_count = sum(s.total_image_count for s in self.subfolders.values())
         self.total_image_count = len(self.images) + subfolders_image_count
+
+    @functools.cached_property
+    def cover_image(self) -> TargetImage:
+        candidate_album_images = itertools.chain(
+            self.images.values(),
+            [
+                subfolder.cover_image
+                for subfolder in self.subfolders.values()
+                if subfolder.cover_image
+            ],
+        )
+        return max(candidate_album_images, key=lambda image: image.rating)
+
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
         if path == self.path:
@@ -280,16 +296,6 @@ class TargetFolderHandler(FileHandler):
 
         for image in target_folder.images.values():
             builder.build(image.path)
-
-        candidate_album_images = itertools.chain(
-            target_folder.images.values(),
-            [
-                subfolder.cover_image
-                for subfolder in target_folder.subfolders.values()
-                if subfolder.cover_image
-            ],
-        )
-        target_folder.cover_image = max(candidate_album_images, key=lambda i: i.rating)
 
         index_html = target_folder.path / "index.html"
 

@@ -99,8 +99,11 @@
         {% for name, image in folder.images.items() %}
             <article class="image" id="{{ image.path.stem }}">
                 <div class="image-container">
-                    <picture style="display: block;" onclick="scrollToNextUrlHashTarget(+1, document.querySelector('#{{ image.path.stem }}'));">
-                        <img class="image"
+                    <picture
+                        style="--orig-width: {{ image.width }}px; --orig-height: {{ image.height }}px"
+                        onclick="scrollToNextUrlHashTarget(+1, document.querySelector('#{{ image.path.stem }}'));"
+                        >
+                        <img
                             srcset="{{ image.path_800w | relative_to(folder.path) }} 800w, {{ image.path_1500w | relative_to(folder.path) }} 1500w, {{ image.path_3000w | relative_to(folder.path) }} 3000w, {{image.path | relative_to(folder.path)}}"
                             src="{{image.path | relative_to(folder.path)}}"
                             alt="{{image.exif.IPTC.Artist}}" />
