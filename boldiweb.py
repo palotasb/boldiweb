@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import collections
 import functools
 import itertools
@@ -453,7 +454,7 @@ class Album(BuildSystem):
         self.save_build_db()
 
 
-def main():
+async def main():
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler())
     parser = argparse.ArgumentParser()
@@ -471,6 +472,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
 exiftool.__exit__(None, None, None)

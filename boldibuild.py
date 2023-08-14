@@ -26,7 +26,7 @@ class BuildDB:
         default_factory=lambda: defaultdict(dict[Target, Stamp])
     )
 
-    def load(self, path: Path):
+    async def load(self, path: Path):
         try:
             with open(path, "r") as fp:
                 build_db_json = json.load(fp)
@@ -39,7 +39,7 @@ class BuildDB:
         self.dependencies = defaultdict(dict)
         self.dependencies.update(build_db_json.get("dependencies", {}))
 
-    def save(self, path: Path):
+    async def save(self, path: Path):
         with open(path, "w") as fp:
             build_db_json = {"targets": self.targets, "dependencies": dict(self.dependencies)}
             json.dump(build_db_json, fp, indent=2)
@@ -61,7 +61,7 @@ class Handler:
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
         return a and b and a == b
 
-    def rebuild_impl(self, target: Target, builder: Builder):
+    async def rebuild_impl(self, target: Target, builder: Builder):
         raise NotImplementedError(f"{self} cannot build {target!r}")
 
 
@@ -97,7 +97,7 @@ class BuildSystem:
         dep_handler = self.get_handler(dependency)
         self.db.dependencies[target][dependency] = dep_handler.stamp(dependency)
 
-    def rebuild(self, target: Target, level: int = 0):
+    async def rebuild(self, target: Target, level: int = 0):
         target = str(target)
         logger.info(f"{' '*2*level}rebuild({target=!r})")
         handler = self.get_handler(target)
@@ -116,7 +116,7 @@ class BuildSystem:
         self.build(dependency, level)
         self.register_dependency(target, dependency)
 
-    def build(self, target: Target, level: int = 0):
+    async def build(self, target: Target, level: int = 0):
         target = str(target)
         logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
@@ -134,8 +134,8 @@ class BuildSystem:
                 self.rebuild(target, level + 1)
                 return
 
-    def load_build_db(self):
+    async def load_build_db(self):
         self.db.load(self.db_path)
 
-    def save_build_db(self):
+    async def save_build_db(self):
         self.db.save(self.db_path)
