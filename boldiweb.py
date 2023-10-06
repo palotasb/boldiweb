@@ -286,17 +286,17 @@ class TargetFolderHandler(FileHandler):
     def can_handle(self, target: Target) -> bool:
         return self.maybe_target_folder(target) is not None
 
-    def rebuild_impl(self, target: Target, builder: Builder):
+    async def rebuild_impl(self, target: Target, builder: Builder):
         target_folder = self.target_folder(target)
 
         target_folder.path.mkdir(parents=True, exist_ok=True)
-        builder.add_source(target_folder.source.path)
+        await builder.add_source(target_folder.source.path)
 
         for subfolder in target_folder.subfolders.values():
-            builder.build(subfolder.path)
+            await builder.build(subfolder.path)
 
         for image in target_folder.images.values():
-            builder.build(image.path)
+            await builder.build(image.path)
 
         index_html = target_folder.path / "index.html"
 
@@ -305,9 +305,9 @@ class TargetFolderHandler(FileHandler):
         with open(index_html, "w") as fp:
             stream.dump(fp)
         for template_file in (HERE / "templates").iterdir():
-            builder.add_source(template_file)
+            await builder.add_source(template_file)
 
-        builder.add_source(__file__)
+        await builder.add_source(__file__)
 
 
 @dataclass
@@ -338,7 +338,7 @@ class TargetImageHandler(FileHandler):
             ]
         )
 
-    def rebuild_impl(self, target: str, builder: Builder):
+    async def rebuild_impl(self, target: str, builder: Builder):
         image = self.target_image(target)
 
         shutil.copy(image.source.path, image.path)
@@ -378,11 +378,11 @@ class TargetImageHandler(FileHandler):
         with open(image.exif_path, "w") as fp:
             json.dump(get_exif_tags(image.source.path), fp, indent=2)
 
-        builder.add_source(image.source.path)
-        builder.add_source(image.path_3000w)
-        builder.add_source(image.path_1500w)
-        builder.add_source(image.path_800w)
-        builder.add_source(image.exif_path)
+        await builder.add_source(image.source.path)
+        await builder.add_source(image.path_3000w)
+        await builder.add_source(image.path_1500w)
+        await builder.add_source(image.path_800w)
+        await builder.add_source(image.exif_path)
 
 
 @dataclass
@@ -402,10 +402,10 @@ class StaticHandler(Handler):
     def stamp(self, target: Target) -> Stamp:
         return "; ".join(FileHandler.stamp(self, file) for file in self.files.values())
 
-    def rebuild_impl(self, target: Target, builder: Builder):
+    async def rebuild_impl(self, target: Target, builder: Builder):
         self.album.target_static.mkdir(parents=True, exist_ok=True)
         for source, target in self.files.items():
-            builder.add_source(HERE / "templates" / source)
+            await builder.add_source(HERE / "templates" / source)
             template = self.album.env.get_template(source)
             stream = template.stream()
             with open(target, "w") as fp:
@@ -442,16 +442,19 @@ class Album(BuildSystem):
         self.env.filters["to_safe_ascii"] = to_safe_ascii
         self.env.filters["human_round"] = human_round
 
-        self.load_build_db()
         self.handlers.append(TargetFolderHandler(self))
         self.handlers.append(TargetImageHandler(self))
         self.handlers.append(StaticHandler(self))
         self.handlers.append(FileHandler())
 
-    def render(self):
-        self.build("//static")
-        self.build(self.target_root.path)
-        self.save_build_db()
+    async def init(self):
+        await self.load_build_db()
+
+
+    async def render(self):
+        await self.build("//static")
+        await self.build(self.target_root.path)
+        await self.save_build_db()
 
 
 async def main():
@@ -468,7 +471,8 @@ async def main():
     source_path = source_path.absolute()
     target_path = target_path.absolute()
     album = Album(target_path / "build.db.json", title, source_path, target_path)
-    album.render()
+    await album.init()
+    await album.render()
 
 
 if __name__ == "__main__":

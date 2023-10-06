@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Coroutine
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -47,8 +47,8 @@ class BuildDB:
 
 @dataclass
 class Builder:
-    build: Callable[[Target], None]
-    add_source: Callable[[Target], None]
+    build: Coroutine[Target, None, None]
+    add_source: Coroutine[Target, None, None]
 
 
 class Handler:
@@ -91,7 +91,7 @@ class BuildSystem:
                 return handler
         return Handler()
 
-    def register_dependency(self, target: Target, dependency: Target):
+    async def register_dependency(self, target: Target, dependency: Target):
         target = str(target)
         dependency = str(dependency)
         dep_handler = self.get_handler(dependency)
@@ -106,15 +106,15 @@ class BuildSystem:
             partial(self.build_as_dependency, target, level=level + 1),
             partial(self.register_dependency, target),
         )
-        handler.rebuild_impl(target, builder)
+        await handler.rebuild_impl(target, builder)
         self.db.targets[target] = handler.stamp(target)
-        self.save_build_db()
+        await self.save_build_db()
 
-    def build_as_dependency(self, target: Target, dependency: Target, level: int = 0):
+    async def build_as_dependency(self, target: Target, dependency: Target, level: int = 0):
         target = str(target)
         dependency = str(dependency)
-        self.build(dependency, level)
-        self.register_dependency(target, dependency)
+        await self.build(dependency, level)
+        await self.register_dependency(target, dependency)
 
     async def build(self, target: Target, level: int = 0):
         target = str(target)
@@ -122,20 +122,20 @@ class BuildSystem:
         handler = self.get_handler(target)
         old_stamp = self.db.targets.get(target)
         if old_stamp is None or not handler.stamps_match(old_stamp, handler.stamp(target)):
-            self.rebuild(target, level + 1)
+            await self.rebuild(target, level + 1)
             return
 
         for dep, old_dep_stamp in self.db.dependencies[target].items():
             if dep in self.db.targets:
-                self.build(dep, level + 1)
+                await self.build(dep, level + 1)
             dep_handler = self.get_handler(dep)
             cur_dep_stamp = dep_handler.stamp(dep)
             if not dep_handler.stamps_match(old_dep_stamp, cur_dep_stamp):
-                self.rebuild(target, level + 1)
+                await self.rebuild(target, level + 1)
                 return
 
     async def load_build_db(self):
-        self.db.load(self.db_path)
+        await self.db.load(self.db_path)
 
     async def save_build_db(self):
-        self.db.save(self.db_path)
+        await self.db.save(self.db_path)
