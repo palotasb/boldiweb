@@ -13,9 +13,9 @@
 </head>
 <body>
     <header>
-        <h1>{{folder.title}}</h1>
+        <h1><a href="./index.html">{{folder.title}}</a></h1>
         <nav>
-        {% for parent in folder.parents + [folder] %}
+        {% for parent in folder.parents %}
             <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
             {{ "→" if not loop.last else "" }}
         {% endfor %}
@@ -135,7 +135,7 @@
                     <small>({{image.focal_length_35mm | human_round or "?"}}mm at 35mm <abbr title="Equivalent Field of View">equiv. FOV</abbr>)</small>.
                 </p>
                 <p class="gray-text">
-                    <a href="#{{ image.path.stem }}.thumbnail"><kbd>G</kbd> ⇧ {{ folder.title }}</a>
+                    <a href="#top"><kbd>E</kbd> ⇧ {{ folder.title }}</a>
                     |
                     <a href="javascript:toggleFullScreen()"><kbd>F</kbd> Full screen</a>
                     {% if loop.previtem %}
@@ -159,11 +159,12 @@
   
     <footer id="bottom">
         <nav>
-        {% for parent in folder.parents + [folder] %}
+        {% for parent in folder.parents %}
             <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
             {{ "→" if not loop.last else "" }}
         {% endfor %}
         </nav>
+        <h1><a href="./index.html">{{folder.title}}</a></h1>
         <p id="copyright">Copyright &copy;</p>
     </footer>
 </body>

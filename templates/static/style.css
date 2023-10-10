@@ -94,7 +94,7 @@ svg {
     max-height: 125px;
 }
 
-@media (min-width: 80rem) {
+@media (min-width: 500px) {
     .flex-masonry > .flex-masonry-outer  {
         min-height: 125px;
         max-height: 150px;
@@ -102,6 +102,17 @@ svg {
 
     .flex-masonry > .flex-masonry-outer > .flex-masonry-inner {
         max-height: 155px;
+    }
+}
+
+@media (min-width: 1000px) {
+    .flex-masonry > .flex-masonry-outer  {
+        min-height: 200px;
+        max-height: 250px;
+    }
+
+    .flex-masonry > .flex-masonry-outer > .flex-masonry-inner {
+        max-height: 250px;
     }
 }
 
