@@ -1,4 +1,7 @@
+let fullscreenScrollTarget = null;
+
 function toggleFullScreen() {
+    fullscreenScrollTarget = getCurrentScrollTarget();
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen({navigationUI: "hide"});
     } else {
@@ -6,16 +9,22 @@ function toggleFullScreen() {
     }
 }
 
-function defaultHashTarget() {
+document.addEventListener("fullscreenchange", (event) => {
+    fullscreenScrollTarget = fullscreenScrollTarget || getCurrentScrollTarget();
+    fullscreenScrollTarget.scrollIntoView({behavior: "instant"});
+    fullscreenScrollTarget = null;
+});
+
+function defaultScrollTarget() {
     return document.querySelector("header");
 }
 
-function getCandidateUrlHashTargets() {
+function getCandidateScrollTargets() {
     return document.querySelectorAll("header, #subfolders, #thumbnails, article.image, footer");
 }
 
-function getCurrentUrlHashTarget() {
-    return window.location.hash && document.querySelector(window.location.hash) || defaultHashTarget();
+function getCurrentScrollTarget() {
+    return /*window.location.hash && document.querySelector(window.location.hash) |*/ getFirstVisibleScrollTarget();
 }
 
 function isElementVisible(element) {
@@ -32,8 +41,8 @@ function isElementPreciselyScrolledIntoView(element) {
     return (viewport.offsetTop -5 <= rect.top && rect.top <= viewport.offsetTop + 5);
 }
 
-function getFirstVisibleUrlHashTarget() {
-    const candidates = getCandidateUrlHashTargets();
+function getFirstVisibleScrollTarget() {
+    const candidates = getCandidateScrollTargets();
     firstElement = candidates[0];
     if (isElementVisible(firstElement)) {
         return firstElement;
@@ -47,69 +56,46 @@ function getFirstVisibleUrlHashTarget() {
             return candidate;
         }
     }
-    return defaultHashTarget();
+    return defaultScrollTarget();
 }
 
-function getTargetUrlFirFirstVisibleUrlHashTarget() {
-    const id = getFirstVisibleUrlHashTarget().id;
+function getTargetUrlFirFirstVisibleScrollTarget() {
+    const id = getFirstVisibleScrollTarget().id;
     return id && `#${id}` || window.location.origin + window.location.pathname + window.location.search;
 }
 
-function scrollCurrentUrlHashTargetIntoView(scrollBehavior) {
+function scrollCurrentScrollTargetIntoView(scrollBehavior) {
     scrollBehavior = scrollBehavior || "auto";
-    const currentUrlHashTarget = getCurrentUrlHashTarget();
-    currentUrlHashTarget.scrollIntoView({behavior: scrollBehavior})
+    const currentScrollTarget = getCurrentScrollTarget();
+    currentScrollTarget.scrollIntoView({behavior: scrollBehavior})
 }
 
-function setUrlHashToFirstVisibleUrlHashTargetNow() {
-    const targetUrl = getTargetUrlFirFirstVisibleUrlHashTarget();
-    window.history.replaceState(null, null, targetUrl);
-    if (getCurrentUrlHashTarget() === scrollingTo) {
+function setUrlHash(hash) {
+    const targetUrl = `#${hash}` || window.location.origin + window.location.pathname + window.location.search;
+    // window.history.replaceState(null, null, targetUrl);
+    if (getCurrentScrollTarget() === scrollingTo) {
         scrollingTo = null;
     }
 }
 
-let _scrollEventThrottleTimeout = null;
-let _scrollEventThrottled = false;
-function setUrlHashToFirstVisibleUrlHashTargetThrottled() {
-    if (!_scrollEventThrottled) {
-        _scrollEventThrottled = true;
-        _scrollEventThrottleTimeout = setTimeout(() => {
-            setUrlHashToFirstVisibleUrlHashTargetNow();
-            _scrollEventThrottled = false;
-        }, 200);
-        setUrlHashToFirstVisibleUrlHashTargetNow();
-    }
-}
-
-document.addEventListener("scroll", (event) => {
-    setUrlHashToFirstVisibleUrlHashTargetThrottled();
-});
-
 document.addEventListener("scrollend", (event) => {
-    setUrlHashToFirstVisibleUrlHashTargetNow();
     scrollingTo = null;
 });
 
-document.addEventListener("fullscreenchange", (event) => {
-    scrollCurrentUrlHashTargetIntoView("instant");
-});
-
-document.addEventListener("onload", (event) => {
-    scrollCurrentUrlHashTargetIntoView();
-});
-
 scrollingTo = null;
-function scrollToNextUrlHashTarget(next, source) {
-    const baseTarget = scrollingTo || source || getCurrentUrlHashTarget();
+function scrollToNextScrollTarget(next, source, setHash) {
+    const baseTarget = scrollingTo || source || getCurrentScrollTarget();
     if (!scrollingTo && !isElementPreciselyScrolledIntoView(baseTarget) && next === 1) {
         next = 0;
     }
-    const candidates = getCandidateUrlHashTargets();
+    const candidates = getCandidateScrollTargets();
     for (let i = 0; i < candidates.length; i++) {
         if (candidates[i] === baseTarget) {
             const newTarget = candidates[i + next];
             if (newTarget) {
+                if (setHash && newTarget.id) {
+                    setUrlHash(newTarget.id)
+                }
                 scrollingTo = newTarget;
                 newTarget.scrollIntoView();
                 return;
@@ -118,6 +104,7 @@ function scrollToNextUrlHashTarget(next, source) {
     }
     // If we get stuck, try to get unstuck
     window.scrollBy({"top": 10 * next});
+    scrollingTo = null;
 }
 
 document.addEventListener("keydown", (event) => {
@@ -137,16 +124,16 @@ document.addEventListener("keydown", (event) => {
         || event.key === "ArrowRight" 
         || event.key === "j"
         || (event.key === " " && !event.shiftKey)) {
-        scrollToNextUrlHashTarget(+1);
+        scrollToNextScrollTarget(+1, null, true);
     } else if (
         event.key === "ArrowUp"
         || event.key === "PageUp"
         || event.key === "ArrowLeft"
         || event.key === "k"
         || (event.key === " " && event.shiftKey)) {
-        scrollToNextUrlHashTarget(-1);
+        scrollToNextScrollTarget(-1, null, true);
     } else if (event.key === ".") {
-        scrollCurrentUrlHashTargetIntoView();
+        scrollToNextScrollTarget(0, null, true);
     } else if (event.key === "h" || event.key === "e") {
         document.querySelector("header").scrollIntoView();
     } else if (event.key === "l") {
@@ -157,8 +144,11 @@ document.addEventListener("keydown", (event) => {
         document.querySelector("#images").scrollIntoView();
     } else if (event.key === "f" || event.key === "Enter") {
         toggleFullScreen();
-    } else if (event.key == "q") {
-        document.exitFullscreen();
+    } else if (event.key == "q" || event.key === "Escape") {
+        if (document.fullscreenElement) {
+            fullscreenScrollTarget = getCurrentScrollTarget();
+            document.exitFullscreen();
+        }
     } else {
         // DON'T let event.preventDefault() run if event isn't handled 
         return;

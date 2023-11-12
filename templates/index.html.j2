@@ -12,7 +12,7 @@
     <script type="text/javascript" src="{{ (album.target_static / 'script.js') | relative_to(folder.path) }}"></script>
 </head>
 <body>
-    <header>
+    <header id="top">
         <h1><a href="./index.html">{{folder.title}}</a></h1>
         <nav>
         {% for parent in folder.parents %}
@@ -86,9 +86,9 @@
                 |
                 <a href="javascript:toggleFullScreen()"><kbd>F</kbd> <span>Full Screen</span></a>
                 |
-                <a href="javascript:scrollToNextUrlHashTarget(-1);"><kbd>←</kbd> <span>Previous</span></a>
+                <a href="javascript:scrollToNextScrollTarget(-1, null, true);"><kbd>←</kbd> <span>Previous</span></a>
                 |
-                <a href="javascript:scrollToNextUrlHashTarget(+1);"><kbd>→</kbd> <span>Next</span></a>
+                <a href="javascript:scrollToNextScrollTarget(+1, null, true);"><kbd>→</kbd> <span>Next</span></a>
             </p>
         </aside>
         {% endif %}
@@ -101,7 +101,7 @@
                 <div class="image-container">
                     <picture
                         style="--orig-width: {{ image.width }}px; --orig-height: {{ image.height }}px"
-                        onclick="scrollToNextUrlHashTarget(+1, document.querySelector('#{{ image.path.stem }}'));"
+                        onclick="scrollToNextScrollTarget(+1, document.querySelector('#{{ image.path.stem }}'), true);"
                         >
                         <img
                             srcset="{{ image.path_800w | relative_to(folder.path) }} 800w, {{ image.path_1500w | relative_to(folder.path) }} 1500w, {{ image.path_3000w | relative_to(folder.path) }} 3000w, {{image.path | relative_to(folder.path)}}"
