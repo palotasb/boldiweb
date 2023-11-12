@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import collections
+import contextlib
 import functools
 import itertools
 import json
@@ -144,11 +145,12 @@ class TargetImage:
     
     @property
     def created_datetime(self) -> Optional[datetime]:
-        created_str = self.exif["Composite"].get("DateTimeCreated", "")
-        try:
+        created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif["Composite"].get("DateTimeOriginal")
+        with contextlib.suppress(ValueError):
+            return datetime.strptime(created_str, "%Y:%m:%d %H:%M:%S%z")
+        with contextlib.suppress(ValueError):
             return datetime.strptime(created_str, "%Y:%m:%d %H:%M:%S")
-        except ValueError:
-            return None
+        return None
 
     @property
     def width(self) -> int:
