@@ -146,6 +146,8 @@ class TargetImage:
     @property
     def created_datetime(self) -> Optional[datetime]:
         created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif["Composite"].get("DateTimeOriginal")
+        if not created_str:
+            return None
         with contextlib.suppress(ValueError):
             return datetime.strptime(created_str, "%Y:%m:%d %H:%M:%S%z")
         with contextlib.suppress(ValueError):
@@ -277,10 +279,10 @@ class TargetFolder:
 class TargetFolderHandler(FileHandler):
     album: "Album"
 
-    def maybe_target_folder(self, target: Stamp) -> Optional[TargetFolder]:
+    def maybe_target_folder(self, target: Target) -> Optional[TargetFolder]:
         return self.album.target_root.path_to_folder(Path(target))
 
-    def target_folder(self, target: Stamp) -> TargetFolder:
+    def target_folder(self, target: Target) -> TargetFolder:
         maybe_target_folder = self.maybe_target_folder(target)
         assert maybe_target_folder
         return maybe_target_folder
@@ -316,18 +318,18 @@ class TargetFolderHandler(FileHandler):
 class TargetImageHandler(FileHandler):
     album: "Album"
 
-    def maybe_target_image(self, target: Stamp) -> Optional[TargetImage]:
+    def maybe_target_image(self, target: Target) -> Optional[TargetImage]:
         return self.album.target_root.path_to_image(Path(target))
 
-    def target_image(self, target: Stamp) -> TargetImage:
+    def target_image(self, target: Target) -> TargetImage:
         maybe_target_image = self.maybe_target_image(target)
         assert maybe_target_image
         return maybe_target_image
 
-    def can_handle(self, target: Stamp) -> bool:
+    def can_handle(self, target: Target) -> bool:
         return self.maybe_target_image(target) is not None
 
-    def stamp(self, target: Stamp) -> Stamp:
+    def stamp(self, target: Target) -> Stamp:
         image = self.target_image(target)
         return "; ".join(
             FileHandler.stamp(self, path)
@@ -340,7 +342,7 @@ class TargetImageHandler(FileHandler):
             ]
         )
 
-    async def rebuild_impl(self, target: str, builder: Builder):
+    async def rebuild_impl(self, target: Target, builder: Builder):
         image = self.target_image(target)
 
         shutil.copy(image.source.path, image.path)

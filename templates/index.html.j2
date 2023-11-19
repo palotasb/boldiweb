@@ -13,13 +13,13 @@
 </head>
 <body>
     <header id="top">
-        <h1><a href="./index.html">{{folder.title}}</a></h1>
         <nav>
-        {% for parent in folder.parents %}
-            <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
-            {{ "→" if not loop.last else "" }}
-        {% endfor %}
+            <a href="/">album.boldi.net</a>
+            {% for parent in folder.parents %}
+            → <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
+            {% endfor %}
         </nav>
+        <h1><a href="./index.html">{{folder.title}}</a></h1>
     </header>
 
     <main id="main">
@@ -159,10 +159,10 @@
   
     <footer id="bottom">
         <nav>
-        {% for parent in folder.parents %}
-            <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
-            {{ "→" if not loop.last else "" }}
-        {% endfor %}
+            <a href="/">album.boldi.net</a>
+            {% for parent in folder.parents %}
+            → <a href="{{ parent.path | relative_to(folder.path) }}/index.html">{{parent.title}}</a>
+            {% endfor %}
         </nav>
         <h1><a href="./index.html">{{folder.title}}</a></h1>
         <p id="copyright">Copyright &copy;</p>
