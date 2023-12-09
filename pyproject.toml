@@ -5,6 +5,7 @@ dependencies = [
     "Jinja2",
     "marko",
     "Pillow",
+    "pydantic",
     "PyExifTool",
     "Unidecode",
 ]
