@@ -9,17 +9,32 @@ import logging
 import math
 import re
 import shutil
+import tomllib
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
 import jinja2
+import pydantic
 from exiftool import ExifToolHelper
 from PIL import Image
 from unidecode import unidecode
 
 from boldibuild import Builder, BuildSystem, FileHandler, Handler, Stamp, Target
+
+# Asyncio improvements:
+# https://pythonspeed.com/articles/two-thread-pools/
+# TODO CPU Thread Pool
+# TODO Network/Disk/IO thread pool
+
+# Packaging improvements:
+# TODO split into independent packages
+# * boldi.run
+# * boldi.ctx
+# * boldi.build
+# * boldi.album
+# * boldi.web
 
 # source folder -> image list
 # image list -> exif db
@@ -36,6 +51,23 @@ IMAGE_EXTENSIONS = (".JPG", ".JPEG", ".PNG", ".GIF")
 HERE = Path(__file__).parent.resolve()
 NON_URL_SAFE_RE = re.compile(r"[^\w\d\.\-\(\)_/]+", re.ASCII)
 RELEVANT_EXIF_TAGS = ("Composite:all", "EXIF:all", "File:all", "IPTC:all", "XMP:all")
+
+
+class FolderConfig(pydantic.BaseModel):
+    title: Optional[str] = None
+    reversed: bool = False
+
+
+class AlbumConfig(pydantic.BaseModel):
+    title: str
+    copyright: str
+    source: Path
+    target: Path
+    folders: dict[Path, FolderConfig] = {}
+
+    def model_post_init(self, __context: Any):
+        self.source = self.source.expanduser()
+        self.target = self.target.expanduser()
 
 
 exiftool = ExifToolHelper().__enter__()
@@ -142,10 +174,12 @@ class TargetImage:
     @property
     def description(self) -> str:
         return self.exif["IPTC"].get("Caption-Abstract") or ""
-    
+
     @property
     def created_datetime(self) -> Optional[datetime]:
-        created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif["Composite"].get("DateTimeOriginal")
+        created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif["Composite"].get(
+            "DateTimeOriginal"
+        )
         if not created_str:
             return None
         with contextlib.suppress(ValueError):
@@ -225,8 +259,9 @@ class TargetImage:
 class TargetFolder:
     source: SourceFolder
     parent: Optional["TargetFolder"]
+    album_config: AlbumConfig
     path: Path = None
-    title: str = None
+    config: FolderConfig = field(init=False)
     parents: list["TargetFolder"] = field(init=False, default_factory=list)
     subfolders: dict[str, "TargetFolder"] = field(init=False, default_factory=dict)
     images: dict[str, TargetImage] = field(init=False, default_factory=dict)
@@ -234,13 +269,22 @@ class TargetFolder:
 
     def __post_init__(self):
         self.path = self.path or self.parent.path / to_safe_ascii(self.source.path.name)
-        self.title = self.title or self.source.path.name
+
+        self.config = FolderConfig()
+        for folder_config in self.album_config.folders.keys():
+            if self.source.path == self.album_config.source / folder_config:
+                self.config = self.album_config.folders[folder_config]
+
         parent = self.parent
         while parent:
             self.parents.insert(0, parent)
             parent = parent.parent
-        for source_subfolder in self.source.subfolders.values():
-            subfolder = TargetFolder(source_subfolder, self)
+
+        subfolder_iter = self.source.subfolders.values()
+        if self.config.reversed:
+            subfolder_iter = reversed(subfolder_iter)
+        for source_subfolder in subfolder_iter:
+            subfolder = TargetFolder(source_subfolder, self, self.album_config)
             if subfolder.total_image_count != 0:
                 self.subfolders[subfolder.path.name] = subfolder
         for source_image in self.source.images.values():
@@ -248,6 +292,10 @@ class TargetFolder:
             self.images[image.path.name] = image
         subfolders_image_count = sum(s.total_image_count for s in self.subfolders.values())
         self.total_image_count = len(self.images) + subfolders_image_count
+
+    @functools.cached_property
+    def title(self) -> str:
+        return self.config.title or self.source.path.name
 
     @functools.cached_property
     def cover_image(self) -> TargetImage:
@@ -260,7 +308,6 @@ class TargetFolder:
             ],
         )
         return max(candidate_album_images, key=lambda image: image.rating)
-
 
     def path_to_folder(self, path: Path) -> Optional["TargetFolder"]:
         if path == self.path:
@@ -418,15 +465,15 @@ class StaticHandler(Handler):
 
 @dataclass
 class Album(BuildSystem):
-    title: str
-    source_path: InitVar[Path]
-    target_path: InitVar[Path]
+    config: AlbumConfig
     target_root: TargetFolder = field(init=False)
     target_static: Path = field(init=False)
     env: jinja2.Environment = field(init=False)
 
-    def __post_init__(self, source_path: Path, target_path: Path):
-        self.target_root = TargetFolder(SourceFolder(source_path), None, target_path, self.title)
+    def __post_init__(self):
+        self.target_root = TargetFolder(
+            SourceFolder(self.config.source), None, self.config, self.config.target
+        )
         self.target_static = self.target_root.path / "static"
 
         self.env = jinja2.Environment(
@@ -454,7 +501,6 @@ class Album(BuildSystem):
     async def init(self):
         await self.load_build_db()
 
-
     async def render(self):
         await self.build("//static")
         await self.build(self.target_root.path)
@@ -465,16 +511,15 @@ async def main():
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler())
     parser = argparse.ArgumentParser()
-    parser.add_argument("title")
-    parser.add_argument("source_path", type=Path)
-    parser.add_argument("target_path", type=Path)
+    parser.add_argument("album_config_path", type=Path)
     args = parser.parse_args()
-    title: str = args.title
-    source_path: Path = args.source_path
-    target_path: Path = args.target_path
-    source_path = source_path.absolute()
-    target_path = target_path.absolute()
-    album = Album(target_path / "build.db.json", title, source_path, target_path)
+    album_config_path: Path = args.album_config_path
+    with open(album_config_path, "rb") as album_config_file:
+        album_config_dict = tomllib.load(album_config_file)
+
+    album_config = AlbumConfig(**album_config_dict)
+
+    album = Album(album_config.target / "build.db.json", album_config)
     await album.init()
     await album.render()
 
