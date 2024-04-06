@@ -10,7 +10,7 @@ import math
 import re
 import shutil
 import tomllib
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -177,9 +177,9 @@ class TargetImage:
 
     @property
     def created_datetime(self) -> Optional[datetime]:
-        created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif["Composite"].get(
-            "DateTimeOriginal"
-        )
+        created_str = self.exif["Composite"].get("DateTimeCreated") or self.exif[
+            "Composite"
+        ].get("DateTimeOriginal")
         if not created_str:
             return None
         with contextlib.suppress(ValueError):
@@ -290,7 +290,9 @@ class TargetFolder:
         for source_image in self.source.images.values():
             image = TargetImage(source_image, self)
             self.images[image.path.name] = image
-        subfolders_image_count = sum(s.total_image_count for s in self.subfolders.values())
+        subfolders_image_count = sum(
+            s.total_image_count for s in self.subfolders.values()
+        )
         self.total_image_count = len(self.images) + subfolders_image_count
 
     @functools.cached_property

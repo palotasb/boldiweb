@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 from collections import defaultdict
@@ -41,7 +42,10 @@ class BuildDB:
 
     async def save(self, path: Path):
         with open(path, "w") as fp:
-            build_db_json = {"targets": self.targets, "dependencies": dict(self.dependencies)}
+            build_db_json = {
+                "targets": self.targets,
+                "dependencies": dict(self.dependencies),
+            }
             json.dump(build_db_json, fp, indent=2)
 
 
@@ -70,12 +74,14 @@ class FileHandler(Handler):
         return True
 
     def stamp(self, target: Target) -> Stamp:
-        try:
-            s = Path(target).stat()
-            # skipped: st_nlink, st_atime_ns because they don't indicate the file's changed
-            return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
-        except OSError:
-            return ""
+        with contextlib.suppress(OSError):
+            path = Path(target)
+            if path.is_file():
+                s = path.stat()
+                # skipped: st_nlink, st_atime_ns because they don't indicate the file's changed
+                return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
+        
+        return ""
 
 
 @dataclass
@@ -110,7 +116,9 @@ class BuildSystem:
         self.db.targets[target] = handler.stamp(target)
         await self.save_build_db()
 
-    async def build_as_dependency(self, target: Target, dependency: Target, level: int = 0):
+    async def build_as_dependency(
+        self, target: Target, dependency: Target, level: int = 0
+    ):
         target = str(target)
         dependency = str(dependency)
         await self.build(dependency, level)
@@ -121,7 +129,9 @@ class BuildSystem:
         logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
         old_stamp = self.db.targets.get(target)
-        if old_stamp is None or not handler.stamps_match(old_stamp, handler.stamp(target)):
+        if old_stamp is None or not handler.stamps_match(
+            old_stamp, handler.stamp(target)
+        ):
             await self.rebuild(target, level + 1)
             return
 

@@ -1,0 +1,10 @@
+title = "BoldiAlbum"
+copyright = "Palotás Boldizsár"
+source = "~/Dropbox/Pictures/ALBUMS/BoldiAlbum"
+target = "/Volumes/BoldiT7Blue/ALBUMS/Web/BoldiAlbum"
+
+[folders]
+
+[folders.""]
+title = "BoldiAlbum"
+reversed = true

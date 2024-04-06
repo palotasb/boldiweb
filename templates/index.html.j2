@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <title>{{folder.title}}
         {% if folder != album.target_root %}
-            – {{album.title}}
+            – {{album.config.title}}
         {% endif %}
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -165,7 +165,7 @@
             {% endfor %}
         </nav>
         <h1><a href="./index.html">{{folder.title}}</a></h1>
-        <p id="copyright">Copyright &copy;</p>
+        <p id="copyright">Copyright &copy; {{album.config.copyright}}</p>
     </footer>
 </body>
 </html>

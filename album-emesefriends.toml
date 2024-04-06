@@ -1,0 +1,10 @@
+title = "EmeseFriends"
+copyright = "Palotás Boldizsár"
+source = "~/Dropbox/Pictures/ALBUMS/EmeseFriends"
+target = "/Volumes/BoldiT7Blue/ALBUMS/Web/EmeseFriends"
+
+[folders]
+
+[folders.""]
+title = "EmeseFriends"
+reversed = true

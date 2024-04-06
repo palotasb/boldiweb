@@ -1,0 +1,10 @@
+title = "PalotásFamily"
+copyright = "Palotás Boldizsár"
+source = "~/Dropbox/Pictures/ALBUMS/PalotásFamily"
+target = "/Volumes/BoldiT7Blue/ALBUMS/Web/PalotasFamily"
+
+[folders]
+
+[folders.""]
+title = "PalotásFamily"
+reversed = true
