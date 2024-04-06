@@ -1,4 +1,5 @@
 import contextlib
+import difflib
 import json
 import logging
 from collections import defaultdict
@@ -63,7 +64,12 @@ class Handler:
         return ""
 
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
-        return a and b and a == b
+        result = a and b and a == b
+        if a and b and not result:
+            logger.info("\n".join(difflib.context_diff(
+                a.split(), b.split(), fromfile="stamp a", tofile="stamp b", lineterm="", n=1
+            )))
+        return result
 
     async def rebuild_impl(self, target: Target, builder: Builder):
         raise NotImplementedError(f"{self} cannot build {target!r}")
@@ -82,7 +88,23 @@ class FileHandler(Handler):
                 return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
         
         return ""
-
+    
+    # FIXME this is a workaround for unexpected inode changes
+    def stamps_match(self, a: str, b: str) -> bool:
+        result = a and b
+        if not result:
+            return False
+        else:
+            def simplify(s):
+                try:
+                    mode, _ino, _dev, uid, gid, size, mtime, ctime = s.split()
+                except Exception:
+                    logger.error(f"{s=!r}")
+                    raise
+                return f"{mode} {uid} {gid} {size} {mtime} {ctime}"
+            
+            return simplify(a) == simplify(b)
+    # end FIXME
 
 @dataclass
 class BuildSystem:
