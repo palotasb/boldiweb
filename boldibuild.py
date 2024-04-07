@@ -80,8 +80,9 @@ class FileHandler(Handler):
             if path.is_file():
                 s = path.stat()
                 # skipped: st_nlink, st_atime_ns because they don't indicate the file's changed
-                return f"{s.st_mode} {s.st_ino} {s.st_dev} {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
-        
+                # skipped: st_ino, st_dev because they can change as removable media is remounted
+                return f"{s.st_mode} 0 0 {s.st_uid} {s.st_gid} {s.st_size} {s.st_mtime_ns} {s.st_ctime_ns}"
+
         return ""
     
     # FIXME this is a workaround for unexpected inode changes
