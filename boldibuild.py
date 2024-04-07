@@ -151,11 +151,13 @@ class BuildSystem:
         logger.info(f"{' '*2*level}build({target=!r})")
         handler = self.get_handler(target)
         old_stamp = self.db.targets.get(target)
-        if old_stamp is None or not handler.stamps_match(
-            old_stamp, handler.stamp(target)
-        ):
+        cur_stamp = handler.stamp(target)
+        if old_stamp is None or not handler.stamps_match(old_stamp, cur_stamp):
             await self.rebuild(target, level + 1)
             return
+        elif old_stamp != cur_stamp:
+            # upgrade weakly equal stamps to strongly equal ones
+            self.db.targets[target] = cur_stamp
 
         for dep, old_dep_stamp in self.db.dependencies[target].items():
             if dep in self.db.targets:
@@ -165,6 +167,9 @@ class BuildSystem:
             if not dep_handler.stamps_match(old_dep_stamp, cur_dep_stamp):
                 await self.rebuild(target, level + 1)
                 return
+            elif old_dep_stamp != cur_dep_stamp:
+                # upgrade weakly equal stamps to strongly equal ones
+                self.db.dependencies[target][dep] = cur_dep_stamp
 
     async def load_build_db(self):
         await self.db.load(self.db_path)
