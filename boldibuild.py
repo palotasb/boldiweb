@@ -1,5 +1,4 @@
 import contextlib
-import difflib
 import json
 import logging
 from collections import defaultdict
