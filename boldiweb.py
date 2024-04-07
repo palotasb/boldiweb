@@ -390,14 +390,6 @@ class TargetImageHandler(FileHandler):
                 image.exif_path,
             ]
         )
-    
-    # FIXME this is a workaround for unexpected inode changes
-    def stamps_match(self, a: Stamp, b: Stamp) -> bool:
-        return all(
-            FileHandler.stamps_match(self, ss[0].strip(), ss[1].strip())
-            for ss in zip(a.split(";"), b.split(";"))
-        )
-    # end FIXME
 
     async def rebuild_impl(self, target: Target, builder: Builder):
         image = self.target_image(target)

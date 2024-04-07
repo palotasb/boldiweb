@@ -85,27 +85,9 @@ class FileHandler(Handler):
 
         return ""
     
-    # FIXME this is a workaround for unexpected inode changes
     def stamps_match(self, a: str, b: str) -> bool:
-        result = a and b
-        if not result:
-            return False
-        else:
-            def simplify(s):
-                try:
-                    mode, _ino, _dev, uid, gid, size, mtime, ctime = s.split()
-                except Exception:
-                    logger.error(f"{s=!r}")
-                    raise
-                return f"{mode} {uid} {gid} {size} {mtime} {ctime}"
-            
-            native_result = a == b
-            simplified_result = simplify(a) == simplify(b)
-            if native_result != simplified_result:
-                logger.warning(f"dev/inode changed: {a.split()[2]}/{a.split()[1]} => {b.split()[2]}/{b.split()[1]}")
+        return a and b and a == b
 
-            return simplified_result
-    # end FIXME
 
 @dataclass
 class BuildSystem:
