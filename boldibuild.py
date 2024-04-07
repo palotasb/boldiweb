@@ -64,12 +64,7 @@ class Handler:
         return ""
 
     def stamps_match(self, a: Stamp, b: Stamp) -> bool:
-        result = a and b and a == b
-        if a and b and not result:
-            logger.info("\n".join(difflib.context_diff(
-                a.split(), b.split(), fromfile="stamp a", tofile="stamp b", lineterm="", n=1
-            )))
-        return result
+        return a and b and a == b
 
     async def rebuild_impl(self, target: Target, builder: Builder):
         raise NotImplementedError(f"{self} cannot build {target!r}")
@@ -103,7 +98,12 @@ class FileHandler(Handler):
                     raise
                 return f"{mode} {uid} {gid} {size} {mtime} {ctime}"
             
-            return simplify(a) == simplify(b)
+            native_result = a == b
+            simplified_result = simplify(a) == simplify(b)
+            if native_result != simplified_result:
+                logger.warning(f"dev/inode changed: {a.split()[2]}/{a.split()[1]} => {b.split()[2]}/{b.split()[1]}")
+
+            return simplified_result
     # end FIXME
 
 @dataclass
